@@ -1,11 +1,13 @@
-import tempfile
+import io
 import time
+import tempfile
+
 from modal import method, Image, Secret
 
 from .common import stub
 
 
-MODEL_NAMES = ["base.en", "large-v2"]
+MODEL_NAMES = ["base.en"]#, "large-v2"]
 
 transcriber_image = (
     Image.debian_slim(python_version="3.10.8")
@@ -18,40 +20,9 @@ transcriber_image = (
 )
 
 
-def load_audio(data: bytes, sr: int = 16000):
-    import ffmpeg
-    import numpy as np
-
-    try:
-        fp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-        fp.write(data)
-        fp.close()
-        # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
-        # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
-        out, _ = (
-            ffmpeg.input(
-                fp.name,
-                threads=0,
-                format="f32le",
-                acodec="pcm_f32le",
-                ac=1,
-                ar="48k",
-            )
-            .output("-", format="f32le", acodec="pcm_f32le", ac=1, ar=sr)
-            .run(
-                cmd=["ffmpeg", "-nostdin"],
-                capture_stdout=True,
-                capture_stderr=True,
-            )
-        )
-    except ffmpeg.Error as e:
-        raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
-
-    return np.frombuffer(out, np.float32).flatten()
-
-
 @stub.cls(
-    gpu="A10G",
+    # gpu="A10G",
+    # cpu="A10",
     container_idle_timeout=180,
     image=transcriber_image,
     secret=Secret.from_name("my-openai-secret"),
@@ -61,33 +32,56 @@ class Whisper:
         import torch
         import whisper
 
-        self.use_gpu = torch.cuda.is_available()
-        device = "cuda" if self.use_gpu else "cpu"
+        # self.use_gpu = torch.cuda.is_available()
+        # device = "cuda" if self.use_gpu else "cpu"
+        device = "cpu"
         self.models = {
             model_name: whisper.load_model(model_name, device=device) for model_name in MODEL_NAMES
         }
 
     @method()
-    async def transcribe_segment(
+    def transcribe_segment(
         self,
         audio_data: bytes,
         model_name: str = None,
-        use_api: bool = False,
     ):
-        import openai
-        t0 = time.time()
-        np_array = load_audio(audio_data)
-        if use_api:
-            result = openai.Audio.create(
-                model="whisper-large",
-                audio=np_array.tobytes(),
-                language="en",
-            )
-        elif model_name:
-            result = self.models[model_name].transcribe(np_array, language="en", fp16=self.use_gpu)  # type: ignore
-        else:
-            result = {"error": "No transcription model specified"}
+        try:
+            import openai
+            from whisper import load_audio
 
-        print(f"Transcribed in {time.time() - t0:.2f}s")
+            t0 = time.time()
 
-        return result
+            # Create a temporary .wav file from audio bytes
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
+                temp_audio_file.write(audio_data)
+                temp_audio_file_path = temp_audio_file.name
+
+            # Convert .wav file to numpy array
+            np_array = load_audio(temp_audio_file_path)
+
+            if model_name in self.models:
+                result = self.models[model_name].transcribe(np_array, language="en")  # type: ignore
+                print(result)
+                transcription_text = result["text"]
+            elif model_name:
+                raise ValueError(f"Unknown model name: {model_name}")
+            else:
+                # Convert audio bytes to a file-like object
+                audio_file = io.BytesIO(audio_data)
+                audio_file.name = "audio.wav"
+
+                # Pass the file-like object to the OpenAI API
+                result = openai.Audio.transcribe(
+                    model="whisper-1",
+                    file=audio_file,
+                    language="en",
+                )
+                transcription_text = result["text"]
+
+
+            print(f"Transcribed the following text in {time.time() - t0:.2f}s: {transcription_text}")
+
+            return transcription_text
+        except Exception as e:
+            print(f"Error during transcription with Whisper: {str(e)}")
+            raise
