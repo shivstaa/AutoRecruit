@@ -8,7 +8,7 @@ from .common import stub
 @stub.cls()
 class ChatGPT:
     @method()
-    async def generate(self, messages: List[Dict[str, str]], **kwargs) -> AsyncGenerator[str, None]:
+    async def generate_text(self, messages: List[Dict[str, str]], **kwargs) -> AsyncGenerator[str, None]:
         async for response in openai.ChatCompletion.create(messages=messages, stream=True, **kwargs):
             content = response["choices"][0].get("message", {}).get("content")
             if content:

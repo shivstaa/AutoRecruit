@@ -9,6 +9,7 @@ from modal import asgi_app
 from server.common import stub
 from server.stt import Whisper
 from server.tts import ElevenLabsTTS
+from server.llm import ChatGPT
 
 
 static_path = Path(__file__).with_name("frontend").resolve()
@@ -20,6 +21,7 @@ def web():
     web_app = FastAPI()
     transcriber = Whisper()
     tts = ElevenLabsTTS()
+    text_generator = ChatGPT()
 
     @web_app.post("/transcribe")
     async def transcribe(request: Request):
@@ -39,21 +41,21 @@ def web():
         body = await request.json()
         tts_enabled = body.get("tts", False)
 
-        def speak(sentence):
+        async def speak(sentence):
             if tts_enabled:
-                return {
+                yield {
                     "type": "audio",
                     "value": tts.speak.call(sentence, "default_voice_id").object_id,
                 }
             else:
-                return {
+                yield {
                     "type": "sentence",
                     "value": sentence,
                 }
 
-        def gen():
+        async def gen():
             sentence = ""
-            for segment in stub.stream_chat.call(body["input"], body["history"]).result():
+            async for segment in text_generator.generate_text.call(body["input"], body["history"]):
                 yield {"type": "text", "value": segment}
                 sentence += segment
                 for p in PUNCTUATION:
