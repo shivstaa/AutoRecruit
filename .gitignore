@@ -27,3 +27,4 @@ yarn-error.log*
 # python
 __pycache__/
 tests.ipynb
+*test.py
