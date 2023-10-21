@@ -44,6 +44,7 @@ class Whisper:
         self,
         audio_data: bytes,
         model_name: str = None,
+        format: str = ".wav",
     ):
         try:
             import openai
@@ -52,7 +53,7 @@ class Whisper:
             t0 = time.time()
 
             # Create a temporary .wav file from audio bytes
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=format) as temp_audio_file:
                 temp_audio_file.write(audio_data)
                 temp_audio_file_path = temp_audio_file.name
 

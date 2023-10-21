@@ -91,6 +91,7 @@ def web():
             if text is None:
                 raise HTTPException(status_code=400, detail="text is required")
             audio = tts.speak.remote(text)
+            
         except Exception as e:
             print(f"Error during text-to-speech: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal Server Error")
