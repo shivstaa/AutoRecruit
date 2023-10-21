@@ -6,9 +6,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from modal import asgi_app
 
-from modal.common import stub
-from modal.stt import Whisper
-from modal.tts import ElevenLabsTTS
+from server.common import stub
+from server.stt import Whisper
+from server.tts import ElevenLabsTTS
 
 
 static_path = Path(__file__).with_name("frontend").resolve()
