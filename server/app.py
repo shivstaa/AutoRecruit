@@ -1,32 +1,62 @@
 import json
-from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
-from modal import asgi_app
+from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from modal import asgi_app, Image, Secret
 
 from server.common import stub
 from server.stt import Whisper
 from server.tts import ElevenLabsTTS
+from server.llm import ChatGPT
 
 
-static_path = Path(__file__).with_name("frontend").resolve()
 PUNCTUATION = [".", "?", "!", ":", ";", "*"]
+auth_scheme = HTTPBearer()
 
 
+@stub.function(
+    image=Image.debian_slim().pip_install(["fastapi", "uvicorn", "httpx", "pydantic", "pyyaml", "pydantic-yaml"]),
+    secret=Secret.from_name("my-web-auth-token")
+)
 @asgi_app()
 def web():
     web_app = FastAPI()
+
+    # Configure CORS
+    origins = [
+        "http://localhost:3000",  # Local frontend server
+        "https://yourfrontenddomain.com",  # Production frontend server
+    ]
+    web_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     transcriber = Whisper()
     tts = ElevenLabsTTS()
+    text_generator = ChatGPT()
+
+    async def get_current_user(token: HTTPAuthorizationCredentials = Depends(auth_scheme)):
+        auth_token = stub.secrets["my-web-auth-token"].get()
+        if token.credentials != auth_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect bearer token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return token.credentials
 
     @web_app.post("/transcribe")
     async def transcribe(request: Request):
         body = await request.json()
         audio_data = body.get("audio_data")
         if audio_data is None:
-            return JSONResponse(content={"error": "audio_data is required"}, status_code=400)
+            return {"error": "audio_data is required"}, 400
 
         model_name = body.get("model_name")
         use_api = body.get("use_api", False)
@@ -41,9 +71,10 @@ def web():
 
         def speak(sentence):
             if tts_enabled:
+                fc = tts.speak.spawn(sentence, "default_voice_id")
                 return {
                     "type": "audio",
-                    "value": tts.speak.call(sentence, "default_voice_id").object_id,
+                    "value": fc.object_id,
                 }
             else:
                 return {
@@ -53,7 +84,7 @@ def web():
 
         def gen():
             sentence = ""
-            for segment in stub.stream_chat.call(body["input"], body["history"]).result():
+            for segment in text_generator.generate_text.call(body["input"], body["history"]).result():
                 yield {"type": "text", "value": segment}
                 sentence += segment
                 for p in PUNCTUATION:
@@ -74,5 +105,4 @@ def web():
             media_type="text/event-stream",
         )
 
-    web_app.mount("/", StaticFiles(directory=static_path, html=True))
     return web_app
