@@ -71,4 +71,4 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 
 ### TODO: fix this
-You can also run `modal deploy modal/app.py` to deploy the modal.
+You can also run `modal deploy server/app.py` to deploy the modal.
