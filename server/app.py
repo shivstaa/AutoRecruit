@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
+import json
+
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import modal
 from modal import asgi_app, Secret, Image
 
 from server.common import stub
@@ -34,8 +35,8 @@ def web():
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],  # Allow all methods
-        allow_headers=["*"],  # Allow all headers
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     transcriber = Whisper()
