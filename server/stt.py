@@ -1,6 +1,6 @@
 import tempfile
 import time
-from modal import Image, method
+from modal import method, Image, Secret
 
 from .common import stub
 
@@ -54,6 +54,7 @@ def load_audio(data: bytes, sr: int = 16000):
     gpu="A10G",
     container_idle_timeout=180,
     image=transcriber_image,
+    secret=Secret.from_name("my-openai-secret"),
 )
 class Whisper:
     def __enter__(self):
@@ -73,11 +74,10 @@ class Whisper:
         model_name: str = None,
         use_api: bool = False,
     ):
+        import openai
         t0 = time.time()
         np_array = load_audio(audio_data)
         if use_api:
-            import openai
-            openai.api_key = stub.secrets["my-openai-secret"].get_secret_value()["api_key"]
             result = openai.Audio.create(
                 model="whisper-large",
                 audio=np_array.tobytes(),
