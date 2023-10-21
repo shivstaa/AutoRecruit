@@ -1,10 +1,10 @@
 import json
 
 from fastapi import FastAPI, Request, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from modal import asgi_app, Secret, Image
+from modal import asgi_app, Image, Secret
 
 from server.common import stub
 from server.stt import Whisper
@@ -16,11 +16,9 @@ PUNCTUATION = [".", "?", "!", ":", ";", "*"]
 auth_scheme = HTTPBearer()
 
 
-app_image = Image.debian_slim().pip_install(["fastapi", "uvicorn", "httpx", "pydantic", "pyyaml", "pydantic-yaml"])
-
-
 @stub.function(
-    image=app_image,
+    image=Image.debian_slim().pip_install(["fastapi", "uvicorn", "httpx", "pydantic", "pyyaml", "pydantic-yaml"]),
+    secret=Secret.from_name("my-web-auth-token")
 )
 @asgi_app()
 def web():
@@ -44,8 +42,7 @@ def web():
     text_generator = ChatGPT()
 
     async def get_current_user(token: HTTPAuthorizationCredentials = Depends(auth_scheme)):
-        auth_token_secret = Secret.from_name("my-web-auth-token")
-        auth_token = auth_token_secret.get()
+        auth_token = stub.secrets["my-web-auth-token"].get()
         if token.credentials != auth_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
