@@ -1,6 +1,7 @@
-import json
+import os
+import base64
 
-from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Depends, HTTPException, status, File, UploadFile
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -16,13 +17,26 @@ PUNCTUATION = [".", "?", "!", ":", ";", "*"]
 auth_scheme = HTTPBearer()
 
 
+def check_authorization(token: HTTPAuthorizationCredentials = Depends(auth_scheme)):
+    if token.credentials != os.environ["AUTH_TOKEN"]:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return token.credentials
+
+
 @stub.function(
     image=Image.debian_slim().pip_install(["fastapi", "uvicorn", "httpx", "pydantic", "pyyaml", "pydantic-yaml"]),
     secret=Secret.from_name("my-web-auth-token")
 )
 @asgi_app()
 def web():
-    web_app = FastAPI()
+    web_app = FastAPI(dependencies=[Depends(check_authorization)])
+    transcriber = Whisper()
+    tts = ElevenLabsTTS()
+    llm = ChatGPT()
 
     # Configure CORS
     origins = [
@@ -37,72 +51,49 @@ def web():
         allow_headers=["*"],
     )
 
-    transcriber = Whisper()
-    tts = ElevenLabsTTS()
-    text_generator = ChatGPT()
-
-    async def get_current_user(token: HTTPAuthorizationCredentials = Depends(auth_scheme)):
-        auth_token = stub.secrets["my-web-auth-token"].get()
-        if token.credentials != auth_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect bearer token",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        return token.credentials
-
     @web_app.post("/transcribe")
     async def transcribe(request: Request):
-        body = await request.json()
-        audio_data = body.get("audio_data")
-        if audio_data is None:
-            return {"error": "audio_data is required"}, 400
+        try:
+            body = await request.json()
+            audio_data = body.get("audio_data")
+            if audio_data is None:
+                raise HTTPException(status_code=400, detail="Missing audio_data")
+            audio_data = base64.b64decode(audio_data)
 
-        model_name = body.get("model_name")
-        use_api = body.get("use_api", False)
+            model_name = body.get("model_name")
+            transcription_text = transcriber.transcribe_segment.remote(audio_data, model_name)
+            return {"text": transcription_text}
+        except Exception as e:
+            # Log the error for debugging
+            print(f"Error during transcription: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal Server Error")
 
-        result = await transcriber.transcribe_segment.call(audio_data, model_name, use_api)
-        return result["text"]
+    @web_app.post("/transcribe_file")
+    async def transcribe_file(audio_data: UploadFile = File(...)):
+        content = await audio_data.read()
+        transcription_text = transcriber.transcribe_segment.remote(content, None)
+        return {"text": transcription_text}
 
     @web_app.post("/generate")
     async def generate(request: Request):
         body = await request.json()
-        tts_enabled = body.get("tts", False)
+        messages = body.get("messages")
+        model = body.get("model")
 
-        def speak(sentence):
-            if tts_enabled:
-                fc = tts.speak.spawn(sentence, "default_voice_id")
-                return {
-                    "type": "audio",
-                    "value": fc.object_id,
-                }
-            else:
-                return {
-                    "type": "sentence",
-                    "value": sentence,
-                }
+        completion = llm.generate.remote(messages, model)
+        return {"text": completion}
 
-        def gen():
-            sentence = ""
-            for segment in text_generator.generate_text.call(body["input"], body["history"]).result():
-                yield {"type": "text", "value": segment}
-                sentence += segment
-                for p in PUNCTUATION:
-                    if p in sentence:
-                        prev_sentence, new_sentence = sentence.rsplit(p, 1)
-                        yield speak(prev_sentence)
-                        sentence = new_sentence
-
-            if sentence:
-                yield speak(sentence)
-
-        def gen_serialized():
-            for i in gen():
-                yield json.dumps(i) + "\x1e"
-
-        return StreamingResponse(
-            gen_serialized(),
-            media_type="text/event-stream",
-        )
+    @web_app.post("/speak")
+    async def speak(request: Request):
+        try:
+            body = await request.json()
+            text = body.get("text")
+            if text is None:
+                raise HTTPException(status_code=400, detail="text is required")
+            audio = tts.speak.remote(text)
+            
+        except Exception as e:
+            print(f"Error during text-to-speech: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal Server Error")
 
     return web_app
