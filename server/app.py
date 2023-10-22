@@ -35,7 +35,7 @@ def check_authorization(token: HTTPAuthorizationCredentials = Depends(auth_schem
 def web():
     web_app = FastAPI(dependencies=[Depends(check_authorization)])
     transcriber = Whisper()
-    tts = ElevenLabsTTS()
+    tts = ElevenLabsTTS(voice_id="21m00Tcm4TlvDq8ikWAM")
     llm = ChatGPT()
 
     # Configure CORS
@@ -74,14 +74,26 @@ def web():
         transcription_text = transcriber.transcribe_segment.remote(content, None)
         return {"text": transcription_text}
 
-    @web_app.post("/generate")
-    async def generate(request: Request):
+    @web_app.post("/chat")
+    async def chat(request: Request):
         body = await request.json()
         messages = body.get("messages")
         model = body.get("model")
 
-        completion = llm.generate.remote(messages, model)
+        completion = llm.chat.remote(messages, model)
         return {"text": completion}
+
+    @web_app.post("/stream_chat")
+    async def stream_chat(request: Request):
+        body = await request.json()
+        messages = body.get("messages")
+        model = body.get("model")
+
+        async def generate():
+            async for chunk in llm.stream_chat.remote(messages, model):
+                yield chunk
+
+        return StreamingResponse(generate(), media_type="text/html")
 
     @web_app.post("/speak")
     async def speak(request: Request):
@@ -90,7 +102,22 @@ def web():
             text = body.get("text")
             if text is None:
                 raise HTTPException(status_code=400, detail="text is required")
-            audio = tts.speak.remote(text)
+            
+            tts.speak.remote(text)
+            
+        except Exception as e:
+            print(f"Error during text-to-speech: {str(e)}")
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    @web_app.post("/stream_speak")
+    async def stream_speak(request: Request):
+        try:
+            body = await request.json()
+            text = body.get("text")
+            if text is None:
+                raise HTTPException(status_code=400, detail="text is required")
+            
+            tts.stream_speak.remote(text)
             
         except Exception as e:
             print(f"Error during text-to-speech: {str(e)}")
