@@ -90,7 +90,7 @@ const Interview = () => {
             webSocket.send(event.data);
           }
         };
-        mediaRecorder.start(5000); // Sending data in 100ms chunks
+        mediaRecorder.start(5000); // Sending data in 5s chunks
       };
       webSocket.onmessage = handleTranscriptMessage;
     } catch (error) {
