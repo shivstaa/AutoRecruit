@@ -21,15 +21,12 @@ const modalContentStyle = {
   maxWidth: '500px',
 };
 
-function QuestionModal({ question, onClose }) {
-  if (!question) {
-    return null;
-  }
+function QuestionModal({ modalQuestion, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
       <div style={modalContentStyle}>
-        <p>{question}</p>
+        <p>{modalQuestion}</p>
         <button onClick={onClose}>I am ready, Answer this question</button>
       </div>
     </div>
@@ -41,7 +38,6 @@ const Interview = () => {
   let webSocket = null;
 
   const [transcript, setTranscript] = useState('');
-  const [question, setQuestion] = useState('');
   const [sessionID, setSessionID] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalQuestion, setModalQuestion] = useState('');
@@ -57,6 +53,7 @@ const Interview = () => {
 
   const handleNextQuestion = () => {
     if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+      console.log("first")
       webSocket.send(JSON.stringify({ action: 'next_question', transcript, session_id: sessionID }));
       openModal();  // Open the modal when requesting the next question
     }
@@ -138,8 +135,6 @@ const Interview = () => {
         <button onClick={handleNextQuestion} className="px-4 py-2 bg-green-500 text-white rounded">Next Question</button>
         {isModalOpen && <QuestionModal question={modalQuestion} onClose={closeModal} />}
       </div>
-      <div id="transcript">{transcript}</div>
-      <div id="question">{question}</div>
     </div>
   );
 };

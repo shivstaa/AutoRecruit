@@ -73,8 +73,7 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
         try:
             if bytes_data:
                 self.socket.send(bytes_data)
-            elif text_data:
-                text_data = bytes_data.decode('utf-8')
+            elif text_data is not None:
                 data = json.loads(text_data)
                 if data.get('action') == 'next_question':
                     transcript = data.get('transcript')
@@ -86,7 +85,7 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
             else:
                 self.socket.send(bytes_data)
         except Exception as e:
-            print(e)
+            print("exception", e)
 
     async def send_question(self, question_text):
         await self.send(json.dumps({
