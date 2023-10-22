@@ -5,6 +5,9 @@ import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Interview from './pages/Interview';
+import { AuthProvider } from './components/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+
 function StartInterviewButton() {
   const navigate = useNavigate();
   return <button onClick={() => navigate('/profile')}>Start Interview</button>;
@@ -13,24 +16,25 @@ function StartInterviewButton() {
 function Home() {
   return (
     <div>
-      <Navbar />  {/* <-- Use the Navbar component here */}
+      <Navbar />  
       <StartInterviewButton />
     </div>
   );
 }
-
 function App() {
   return (
-    <main>
+    <AuthProvider>
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ProtectedRoute />}>
+            <Route index element={<Profile />} /> 
+          </Route>
           <Route path="/interview" element={<Interview />} />
         </Routes>
       </Router>
-    </main>
+    </AuthProvider>
   );
 }
 
