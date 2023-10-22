@@ -30,10 +30,10 @@ function Navbar() {
               Hi {user.username}
             </span>
             {showDropdown && ( // Conditionally render the dropdown
-              <ul className="absolute right-0 mt-2 bg-purple-500 text-white rounded shadow-md p-2">
+              <ul className="absolute right-0 mt-2 text-white rounded shadow-md p-2">
                 <li
                   onClick={() => setUser(null)}
-                  className="cursor-pointer hover:bg-purple-700 p-2 rounded"
+                  className="cursor-pointer p-2 rounded"
                 >
                   Logout
                 </li>

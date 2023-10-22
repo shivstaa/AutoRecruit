@@ -21,7 +21,7 @@ function StartInterviewButton() {
       className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-8 py-3 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       onClick={() => navigate("/profile")}
     >
-      Start Interview
+      Start Today
     </button>
   );
 }
@@ -38,12 +38,11 @@ function Content() {
       setStopAnimation(true);
     }, 4750);
 
-    return () => clearTimeout(timer); // Cleanup the timer on component unmount
+    return () => clearTimeout(timer); 
   }, []);
 
   useEffect(() => {
     const handleMouseMove = (event) => {
-      // Only track if on the left side of the page
       if (event.clientX <= window.innerWidth / 2) {
         setMousePosition({
           x: event.clientX,
