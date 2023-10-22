@@ -1,11 +1,13 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
+import os
 from dotenv import load_dotenv
-from deepgram import Deepgram
 from typing import Dict
 
-import os
+from channels.generic.websocket import AsyncWebsocketConsumer
+from deepgram import Deepgram
+
 
 load_dotenv()
+
 
 class TranscriptConsumer(AsyncWebsocketConsumer):
    dg_client = Deepgram(os.getenv('DEEPGRAM_API_KEY'))
