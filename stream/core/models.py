@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 
+
 class Interview(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interviews')
     job_title = models.CharField(max_length=255, blank=False, null=False)
@@ -17,6 +18,7 @@ class Interview(models.Model):
 
     def __str__(self):
         return self.job_title
+
 
 class Session(models.Model):
     interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name='sessions')

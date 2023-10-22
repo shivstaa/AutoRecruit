@@ -34,7 +34,7 @@ def check_authorization(token: HTTPAuthorizationCredentials = Depends(auth_schem
 @asgi_app()
 def web():
     web_app = FastAPI(dependencies=[Depends(check_authorization)])
-    transcriber = Whisper()
+    stt = Whisper()
     tts = ElevenLabsTTS(voice_id="21m00Tcm4TlvDq8ikWAM")
     llm = ChatGPT()
 
@@ -61,7 +61,7 @@ def web():
             audio_data = base64.b64decode(audio_data)
 
             model_name = body.get("model_name")
-            transcription_text = transcriber.transcribe_segment.remote(audio_data, model_name)
+            transcription_text = stt.transcribe_segment.remote(audio_data, model_name)
             return {"text": transcription_text}
         except Exception as e:
             # Log the error for debugging
@@ -71,7 +71,7 @@ def web():
     @web_app.post("/transcribe_file")
     async def transcribe_file(audio_data: UploadFile = File(...)):
         content = await audio_data.read()
-        transcription_text = transcriber.transcribe_segment.remote(content, None)
+        transcription_text = stt.transcribe_segment.remote(content, None)
         return {"text": transcription_text}
 
     @web_app.post("/chat")

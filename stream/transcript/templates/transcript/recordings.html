@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recording Sessions</title>
+</head>
+<body>
+    <h1>Recording Sessions</h1>
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+    <ul>
+        {% for session in sessions %}
+        <li>
+            <a href="{{ session.audio_file.url }}">Audio</a> |
+            Transcript: {{ session.transcript }}
+        </li>
+        {% endfor %}
+    </ul>
+    <script>
+        let recording = false;
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        startBtn.addEventListener('click', () => {
+            // TODO: Start recording
+            recording = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        });
+
+        stopBtn.addEventListener('click', () => {
+            // TODO: Stop recording and save session
+            recording = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
