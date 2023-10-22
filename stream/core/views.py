@@ -8,7 +8,9 @@ from django.views.generic import DeleteView
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from .utils.analysis_utils import get_feedback
+
+from stream.core.utils.analysis_utils import get_feedback
+
 from .tasks import start_analysis
 from .models import Conversation, Interview, Session, Analysis
 from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session

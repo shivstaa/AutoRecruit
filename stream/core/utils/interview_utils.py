@@ -1,3 +1,4 @@
+import io
 import os
 import time
 from typing import List, Dict, Generator
@@ -6,6 +7,7 @@ from threading import Thread
 import queue
 
 import openai
+import whisper
 from elevenlabs import set_api_key, generate, stream
 
 from chat_utils import chat_stream
@@ -115,6 +117,31 @@ def interview_reply(
     
     voice = InterviewerVoice(tts_engine)
     voice.speak_stream(text_stream)
+
+
+def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
+    """
+    Transcribes the given audio data using OpenAI's Whisper ASR model.
+
+    :param audio_data: Byte array of the audio data.
+    :param model_name: Name of the Whisper ASR model to use. Default is "base.en".
+    :return: Transcribed text.
+    """
+    # Load Whisper ASR model
+    model = whisper.load_model(model_name)
+
+    # Convert audio bytes to a file-like object
+    audio_file = io.BytesIO(audio_data)
+    audio_file.name = "audio.wav"
+
+    # Convert audio file to numpy array
+    audio = whisper.load_audio(audio_file)
+
+    # Perform transcription
+    result = model.transcribe(audio)
+    transcription_text = result["text"]
+
+    return transcription_text
 
 
 if __name__ == "__main__":
