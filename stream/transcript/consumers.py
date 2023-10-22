@@ -24,14 +24,17 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
         session = Session.objects.get(session_id=session_id)
         Conversation.objects.create(
             session=session, speaker=speaker, text=text)
-
+        
     async def get_transcript(self, data: Dict) -> None:
         if 'channel' in data:
             transcript = data['channel']['alternatives'][0]['transcript']
-
             if transcript:
                 await self.save_conversation(self.session_id, 'user', transcript)
-                await self.send(transcript)
+                await self.send(json.dumps({
+                    'action': 'new_transcript',
+                    'transcript': transcript
+                }))
+
 
     async def connect_to_deepgram(self):
         try:
@@ -66,19 +69,23 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-    async def receive(self, bytes_data):
+    async def receive(self, text_data=None, bytes_data=None):
         try:
-            text_data = bytes_data.decode('utf-8')
-            data = json.loads(text_data)
-            if data.get('action') == 'save_transcript':
-                transcript = data.get('transcript')
-                if transcript:
-                    await self.save_conversation(self.session_id, 'user', transcript)
-                    # Assuming `generate_question` is a function that generates a new question based on the transcript
-                    new_question = "generate_question(transcript) placeholder"
-                    await self.send_question(new_question)
-        except:
-            self.socket.send(bytes_data)
+            if bytes_data:
+                self.socket.send(bytes_data)
+            elif text_data is not None:
+                data = json.loads(text_data)
+                if data.get('action') == 'next_question':
+                    transcript = data.get('transcript')
+                    if transcript:
+                        await self.save_conversation(self.session_id, 'user', transcript)
+                        # Assuming `generate_question` is a function that generates a new question based on the transcript
+                        new_question = "generate_question(transcript) placeholder"
+                        await self.send_question(new_question)
+            else:
+                self.socket.send(bytes_data)
+        except Exception as e:
+            print("exception", e)
 
     async def send_question(self, question_text):
         await self.send(json.dumps({
@@ -87,6 +94,6 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
         }))
 
 
-    async def send_question_event(self, event):
-        question_text = event['question']
-        await self.send_question(question_text)
+    # async def send_question_event(self, event):
+    #     question_text = event['question']
+    #     await self.send_question(question_text)
