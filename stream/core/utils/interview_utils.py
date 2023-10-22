@@ -10,6 +10,13 @@ import openai
 import whisper
 from elevenlabs import set_api_key, generate, stream
 
+# import sys
+# import os
+
+# parent_folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# sys.path.insert(0, parent_folder_path)
+
+from models import Session
 from chat_utils import chat_stream
 
 load_dotenv()
@@ -49,6 +56,8 @@ class InterviewerVoice:
         end_time = time.time()
         print(f"Total Time for Speaking: {end_time - start_time:.4f} seconds")
 
+        return text_stream
+
 
 class ElevenLabsTTS:
     def __init__(self, voice_id: str, model: str = "eleven_monolingual_v1"):
@@ -58,7 +67,7 @@ class ElevenLabsTTS:
 
     def pre_fetch(self, text_chunk: str, audio_buffer: AudioBuffer, voice_id: str = None):
         self.partial_sentence += text_chunk
-        if self.partial_sentence.endswith('.'):
+        if self.partial_sentence.endswith('.') or self.partial_sentence.endswith('?') or self.partial_sentence.endswith('!'):
             start_time = time.time()
             audio = generate(
                 text=self.partial_sentence.strip(),
@@ -66,10 +75,9 @@ class ElevenLabsTTS:
                 model=self.model,
                 stream=True,
             )
-            end_time = time.time()
-            print(f"Time for Audio Generation: {end_time - start_time:.4f} seconds")
             audio_buffer.add_audio(audio)
-            print(f"Speaking: {self.partial_sentence}")
+            # SEND SENTENCE TO DATABASE
+
             self.partial_sentence = ""
 
 
@@ -119,6 +127,55 @@ def interview_reply(
     voice.speak_stream(text_stream)
 
 
+def generate_interview_question(session: Session):
+
+    session = Session.objects.get(session_id=session.session_id)
+    role = session.interview.job_title
+    job_description = session.interview.job_description
+    company_name = session.interview.company_name
+    resume = session.interview.resume_text
+    name = session.interview.user.username
+    n = 10
+    model = "gpt-4"
+    tts_engine = ElevenLabsTTS("21m00Tcm4TlvDq8ikWAM")
+
+    conversation = Session.objects.get(session_id=session.session_id).conversation_set.all()
+    interview_so_far = []
+
+    messages = [
+        {"role": "system", "content": f"""You are an interviewer, conducting behavioral interviews to select the most skilled and well-rounded candidates for the role of {role} at {company_name}. You generate interview questions given a job description, the resume of an interviewee to that job, and the interview so far. Read carefully the job description and associated resume, as well as the instructions that follow. However, note that you are the expert of the interview process, so the following should be taken as guidelines, not as strict rules.
+
+        Job Description:
+        \"\"\"
+        {job_description}
+        \"\"\"
+
+        {name}'s Resume:
+        \"\"\"
+        {resume}
+        \"\"\"
+
+        This interview will last ~{n} minutes.
+
+        A few notes to help you find avenues of discussion:
+        - You may compare the resume to the job description to see if the interviewee has the necessary skills. If they do not, you may ask them about it, and about what they wish to do to remedy the situation.
+        - You should visit these 4 major areas of discussion:
+            - experience
+            - skills
+            - values
+            - personality
+        """},
+    ]
+    messages += interview_so_far
+
+    text_stream = chat_stream(
+        messages=messages,
+        model=model,
+    )
+    voice = InterviewerVoice(tts_engine)
+    voice.speak_stream(text_stream)
+    return text_stream
+
 def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
     """
     Transcribes the given audio data using OpenAI's Whisper ASR model.
@@ -144,9 +201,32 @@ def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
     return transcription_text
 
 
+def real_time_conversation(session: Session):
+    conversation = Session.objects.get(session_id=session.session_id).conversation_set.all()
 
-def real_time_conversation():
-    pass
+    session = Session.objects.get(session_id=session.session_id)
+    role = session.interview.job_title
+    job_description = session.interview.job_description
+    company_name = session.interview.company_name
+    resume = session.interview.resume_text
+    name = session.interview.user.username
+    interview_so_far = []
+    n = 10
+    model = "gpt-4"
+    tts_engine = ElevenLabsTTS("21m00Tcm4TlvDq8ikWAM")
+
+    for i in range(n):
+        interview_reply(role, job_description, company_name, resume, name, interview_so_far, n, model, tts_engine)
+
+        last_user_message = conversation.filter(speaker='user').last()
+        interview_so_far.append(last_user_message)
+
+    generate_interview_question()    
+
+    audio_file = get_audio() # tmp holder
+    text = stt_whisper(audio_file)
+
+    
 
 
 if __name__ == "__main__":
