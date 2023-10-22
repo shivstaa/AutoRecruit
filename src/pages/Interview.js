@@ -7,30 +7,51 @@ const Interview = () => {
 
   const [transcript, setTranscript] = useState('');
   const [question, setQuestion] = useState('');
+  const [sessionID, setSessionID] = useState(null);  // New state to hold session ID
+
+  const getSessionID = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('session_id');
+  };
+
+  useEffect(() => {
+    // Set session ID on component mount
+    setSessionID(getSessionID());
+  }, []);
 
   const handleKeypress = (event) => {
     if (event.keyCode === 32 && webSocket && webSocket.readyState === WebSocket.OPEN) {  // Spacebar keycode
-      webSocket.send(JSON.stringify({ action: 'save_transcript', transcript }));
+      webSocket.send(JSON.stringify({ action: 'save_transcript', transcript, session_id: sessionID }));
+      setTranscript('');  // Reset transcript for the next chunk of conversation
     }
   };
-  const handleTranscriptMessage = (message) => {
-    const data = JSON.parse(message.data);
-    if (data.action === 'new_question') {
-        setQuestion(data.question);
-    } else {
-        // Assume the message contains transcript text if no action is specified
-        const received = message.data;
-        setTranscript(prevTranscript => prevTranscript + ' ' + received);
-    }
-};
 
+
+  const handleTranscriptMessage = (message) => {
+    try {
+      // Attempt to parse the message data as JSON
+      const data = JSON.parse(message.data);
+      if (data.action === 'new_question') {
+        console.log(data.question.question);
+        setQuestion(data.question.question);
+      } else if (data.action === 'new_transcript') {
+        // Assume the message contains transcript text if the action is 'new_transcript'
+        setTranscript(prevTranscript => prevTranscript + ' ' + data.transcript);
+      }
+    } catch (error) {
+      // If parsing as JSON fails, treat the message data as plain text
+      const received = message.data;
+      setTranscript(prevTranscript => prevTranscript + ' ' + received);
+    }
+  };
+  
 
   useEffect(() => {
     document.addEventListener('keypress', handleKeypress);
     return () => {
       document.removeEventListener('keypress', handleKeypress);
     };
-  }, [transcript]);
+  }, [transcript, sessionID]);  // Include sessionID as a dependency
 
   const startStreaming = async () => {
     try {
@@ -40,11 +61,14 @@ const Interview = () => {
       }
       
       // Initialize WebSocket connection
-      webSocket = new WebSocket('ws://localhost:8000/listen')
-      // webSocket = new WebSocket('ws://your_django_server_url/ws/some_path/');
+      webSocket = new WebSocket(`ws://localhost:8000/listen/${sessionID}/`);
+      // Include session ID in the WebSocket URL or as a message after connecting
       webSocket.onopen = () => {
         // Handle WebSocket open event
         console.log("WebSocket connection opened");
+        
+        // Optionally send session ID over WebSocket after connecting
+        // webSocket.send(JSON.stringify({ action: 'start_session', session_id: sessionID }));
         
         // Send data over WebSocket
         const mediaRecorder = new MediaRecorder(mediaStream);
@@ -53,7 +77,7 @@ const Interview = () => {
             webSocket.send(event.data);
           }
         };
-        mediaRecorder.start(100); // Sending data in 100ms chunks
+        mediaRecorder.start(5000); // Sending data in 100ms chunks
       };
       webSocket.onmessage = handleTranscriptMessage;
     } catch (error) {
@@ -70,7 +94,6 @@ const Interview = () => {
       webSocket.close();
     }
   };
-
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">

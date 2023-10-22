@@ -24,16 +24,15 @@ class Interview(models.Model):
 class Session(models.Model):
     session_id = models.CharField(max_length=32, unique=True, editable=False)  # hash field
     interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name='sessions')
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    questions = models.JSONField()  # You could use a TextField if your Django version < 3.1
-    responses = models.JSONField()  # You could use a TextField if your Django version < 3.1
+    start_time = models.DateTimeField(auto_now=True)
+    questions = models.JSONField(blank=True, null=True)  # You could use a TextField if your Django version < 3.1
+    responses = models.JSONField(blank=True, null=True)  # You could use a TextField if your Django version < 3.1
     performance_score = models.FloatField(null=True, blank=True)  # assuming score is a float value, set to null if not scored yet
 
     def save(self, *args, **kwargs):
         if not self.pk:  # only on the first save
-            current_time = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
-            base_string = f'{self.interview_id}{current_time}'
+            current_time = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
+            base_string = f'{self.interview.id}{current_time}'
             self.session_id = hashlib.md5(base_string.encode()).hexdigest()
         super().save(*args, **kwargs)
 
@@ -46,7 +45,7 @@ class Conversation(models.Model):
     speaker = models.CharField(max_length=10)  # 'user' or 'ai'
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 

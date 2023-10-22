@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from datetime import timezone
+from django.shortcuts import redirect, render
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.views import LogoutView
 from django.urls import reverse_lazy
-from django.views import generic
+from django.views import View, generic
 from django.contrib.auth.forms import UserCreationForm
 
 from django.views import generic
@@ -74,18 +75,20 @@ class InterviewDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'core/interview_confirm_delete.html'
     success_url = reverse_lazy('core:interview_list')
 
-class SessionCreateForInterviewView(LoginRequiredMixin, generic.CreateView):
-    model = Session
-    form_class = SessionForm
-    template_name = 'core/session_form.html'
-
-    def form_valid(self, form):
+class SessionCreateForInterviewView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
         interview = get_object_or_404(Interview, pk=self.kwargs['interview_pk'])
-        form.instance.interview = interview
-        return super().form_valid(form)
+        session = Session.objects.create(
+            interview=interview,
+        )
+        return redirect('core:session_frame', session_id=session.session_id)
+    
+def session_frame(request, session_id):
+    return render(request, 'core/session_frame.html', {'session_id': session_id})
 
-    def get_success_url(self):
-        return reverse_lazy('core:interview_detail', kwargs={'pk': self.kwargs['interview_pk']})
+
+
+
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -110,5 +113,6 @@ def analyze_view(conversation_instance):
         }
     )
     
+
 def home(request):
     return render(request, "core/home.html")

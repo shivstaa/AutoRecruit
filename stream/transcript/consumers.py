@@ -17,7 +17,7 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_conversation(self, session_id, speaker, text):
-        session = Session.objects.get(pk=session_id)
+        session = Session.objects.get(session_id=session_id)
         Conversation.objects.create(
             session=session, speaker=speaker, text=text)
 
@@ -46,6 +46,7 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
         # For example, it could include the user id, or some other identifier.
         self.room_group_name = 'transcript_group'
         # Join room group
+        self.session_id = self.scope['url_route']['kwargs']['session_id']
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -62,7 +63,6 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, bytes_data):
-        # Assuming 'save_transcript' action will be sent as text data
         try:
             text_data = bytes_data.decode('utf-8')
             data = json.loads(text_data)
@@ -70,8 +70,10 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
                 transcript = data.get('transcript')
                 if transcript:
                     await self.save_conversation(self.session_id, 'user', transcript)
+                    # Assuming `generate_question` is a function that generates a new question based on the transcript
+                    new_question = "generate_question(transcript) placeholder"
+                    await self.send_question(new_question)
         except:
-            # Assuming anything that isn't text data is binary audio data
             self.socket.send(bytes_data)
 
     async def send_question(self, question_text):

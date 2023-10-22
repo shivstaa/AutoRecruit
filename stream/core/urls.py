@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import InterviewDetailView, SessionDeleteView, SessionDetailView,UserRegistrationView, UserLoginView, UserLogoutView, home, InterviewCreateView, SessionCreateView, InterviewListView, SessionListView, InterviewDeleteView, SessionCreateForInterviewView
+from .views import InterviewDetailView, SessionDeleteView, SessionDetailView,UserRegistrationView, UserLoginView, UserLogoutView, home, InterviewCreateView, SessionCreateView, InterviewListView, SessionListView, InterviewDeleteView, SessionCreateForInterviewView, session_frame
 
 app_name = 'core'
 urlpatterns = [
@@ -17,4 +17,5 @@ urlpatterns = [
     path('interview/<int:pk>/delete/', InterviewDeleteView.as_view(), name='interview_delete'),
     path('interview/<int:pk>/', InterviewDetailView.as_view(), name='interview_detail'),
     path('interview/<int:interview_pk>/session/new/', SessionCreateForInterviewView.as_view(), name='session_create_for_interview'),
+    path('session/<str:session_id>/frame/', session_frame, name='session_frame'),
 ]
