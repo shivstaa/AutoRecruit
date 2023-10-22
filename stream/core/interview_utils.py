@@ -10,8 +10,8 @@ import openai
 import whisper
 from elevenlabs import set_api_key, generate, stream
 
-from models import Session
-from chat_utils import chat_stream
+from .models import Session
+from .chat_utils import chat_stream
 
 load_dotenv()
 
