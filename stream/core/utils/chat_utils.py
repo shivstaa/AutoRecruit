@@ -1,6 +1,18 @@
-from typing import List, Dict
+import time
+from typing import List, Dict, AsyncGenerator
 
 import openai
+
+
+def chat_stream(messages: List[Dict[str, str]], model: str) -> AsyncGenerator[str, None]:
+    for chunk in openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        stream=True,
+    ):
+        content = chunk["choices"][0].get("delta", {}).get("content")
+        if content is not None:
+            yield content
 
 
 def chat(messages: List[Dict[str, str]], model: str, **kwargs):
