@@ -2,6 +2,7 @@
 
 {% block body %}
   <div class="container">
+    <a href="{% url 'core:analysis_initiate' session.id %}" class="btn btn-primary mt-3">Initiate Analysis</a>
     <div class="card">
       <div class="card-header">
         Session for {{ session.interview.job_title }} on {{ session.start_time|date:"F j, Y, P" }}
