@@ -1,0 +1,35 @@
+{% extends 'core/base_generic.html' %}
+
+{% block body %}
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        {{ interview.job_title }}
+        <a href="{{ interview.get_delete_url }}" class="btn btn-danger btn-sm float-right">
+          <i class="fas fa-trash"></i>
+        </a>
+      </div>
+      <div class="card-body">
+        <p class="card-text">{{ interview.job_description }}</p>
+        <a href="{{ interview.resume.url }}" class="btn btn-primary">View Resume</a>
+        <a href="{{ interview.get_new_session_url }}" class="btn btn-info">Start New Session</a>
+      </div>
+    </div>
+
+    <!-- List related sessions -->
+    <div class="mt-4">
+      <h2>Related Sessions</h2>
+      <ul class="list-group">
+        {% for session in interview.sessions.all %}
+          <li class="list-group-item">
+            <a href="{% url 'core:session_detail' pk=session.pk %}">
+              Session on {{ session.start_time|date:"F j, Y, P" }}
+            </a>
+          </li>
+        {% empty %}
+          <li class="list-group-item">No sessions available.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endblock %}
