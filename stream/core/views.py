@@ -9,14 +9,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
-<<<<<<< HEAD
 from .tasks import start_analysis
 from .models import Conversation, Interview, Session, Analysis
 from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session
 
-=======
 import PyPDF2
->>>>>>> 1ae76889ce92b1a46fbd70384bb96e6edc35cd4d
 
 class InterviewCreateView(LoginRequiredMixin, generic.CreateView):
     model = Interview
