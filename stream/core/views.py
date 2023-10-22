@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
 from .analysis_utils import get_feedback
-
+from .interview_utils import generate_interview_question
 
 from .tasks import start_analysis
 from .models import Conversation, Interview, Session, Analysis
@@ -161,7 +161,7 @@ from asgiref.sync import async_to_sync
 def analyze_view(conversation_instance):
     # Your analysis logic here, call the API to get the next question
     # ...
-    next_question = "Test NextQuestion"
+    next_question = generate_interview_question(conversation_instance.session)
     ai_conversation = Conversation.objects.create(
         session=conversation_instance.session,
         speaker='ai',

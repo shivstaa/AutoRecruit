@@ -194,30 +194,30 @@ def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
     return transcription_text
 
 
-def real_time_conversation(session: Session):
-    conversation = Session.objects.get(session_id=session.session_id).conversation_set.all()
+# def real_time_conversation(session: Session):
+#     conversation = Session.objects.get(session_id=session.session_id).conversation_set.all()
 
-    session = Session.objects.get(session_id=session.session_id)
-    role = session.interview.job_title
-    job_description = session.interview.job_description
-    company_name = session.interview.company_name
-    resume = session.interview.resume_text
-    name = session.interview.user.username
-    interview_so_far = []
-    n = 10
-    model = "gpt-4"
-    tts_engine = ElevenLabsTTS("21m00Tcm4TlvDq8ikWAM")
+#     session = Session.objects.get(session_id=session.session_id)
+#     role = session.interview.job_title
+#     job_description = session.interview.job_description
+#     company_name = session.interview.company_name
+#     resume = session.interview.resume_text
+#     name = session.interview.user.username
+#     interview_so_far = []
+#     n = 10
+#     model = "gpt-4"
+#     tts_engine = ElevenLabsTTS("21m00Tcm4TlvDq8ikWAM")
 
-    for i in range(n):
-        interview_reply(role, job_description, company_name, resume, name, interview_so_far, n, model, tts_engine)
+#     for i in range(n):
+#         interview_reply(role, job_description, company_name, resume, name, interview_so_far, n, model, tts_engine)
 
-        last_user_message = conversation.filter(speaker='user').last()
-        interview_so_far.append(last_user_message)
+#         last_user_message = conversation.filter(speaker='user').last()
+#         interview_so_far.append(last_user_message)
 
-    generate_interview_question()    
+#     generate_interview_question()    
 
-    audio_file = get_audio() # tmp holder
-    text = stt_whisper(audio_file)
+#     audio_file = get_audio() # tmp holder
+#     text = stt_whisper(audio_file)
 
     
 
