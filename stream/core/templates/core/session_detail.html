@@ -7,10 +7,16 @@
         Session for {{ session.interview.job_title }} on {{ session.start_time|date:"F j, Y, P" }}
       </div>
       <div class="card-body">
-        <h5 class="card-title">Questions</h5>
-        <p class="card-text">{{ session.questions }}</p>
-        <h5 class="card-title">Responses</h5>
-        <p class="card-text">{{ session.responses }}</p>
+        <h5 class="card-title">Conversations</h5>
+        {% if conversations %}
+          <ul>
+            {% for conversation in conversations %}
+              <li><strong>{{ conversation.speaker|title }}:</strong> {{ conversation.text }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No conversations yet.</p>
+        {% endif %}
       </div>
     </div>
   </div>

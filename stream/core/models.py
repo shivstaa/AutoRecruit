@@ -40,6 +40,7 @@ class Session(models.Model):
     def __str__(self):
         return f'Session for {self.interview.job_title} on {self.start_time.strftime("%Y-%m-%d %H:%M:%S")}'
 
+
 # In core/models.py
 class Conversation(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE)

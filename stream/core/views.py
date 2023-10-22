@@ -35,6 +35,13 @@ class SessionDetailView(LoginRequiredMixin, generic.DetailView):
     template_name = 'core/session_detail.html'
     context_object_name = 'session'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        session = self.object
+        conversations = Conversation.objects.filter(session=session).order_by('created_at')
+        context['conversations'] = conversations
+        return context
+
 class SessionCreateView(LoginRequiredMixin, generic.CreateView):
     model = Session
     form_class = SessionForm
