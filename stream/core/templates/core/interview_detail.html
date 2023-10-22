@@ -12,7 +12,7 @@
       <div class="card-body">
         <p class="card-text">{{ interview.job_description }}</p>
         <a href="{{ interview.resume.url }}" class="btn btn-primary">View Resume</a>
-        <a href="{{ interview.get_new_session_url }}" class="btn btn-info">Start New Session</a>
+        <a href="{% url 'core:session_create_for_interview' interview_pk=interview.pk %}" class="btn btn-info">Start New Session</a>
       </div>
     </div>
 

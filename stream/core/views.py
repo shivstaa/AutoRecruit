@@ -1,13 +1,14 @@
-from django.shortcuts import render
+from datetime import timezone
+from django.shortcuts import redirect, render
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.views import LogoutView
 from django.urls import reverse_lazy
-from django.views import generic
+from django.views import View, generic
 from django.contrib.auth.forms import UserCreationForm
 
 from django.views import generic
 from django.urls import reverse_lazy
-from .models import Interview, Session
+from .models import Conversation, Interview, Session
 from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DeleteView
@@ -74,19 +75,44 @@ class InterviewDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'core/interview_confirm_delete.html'
     success_url = reverse_lazy('core:interview_list')
 
-class SessionCreateForInterviewView(LoginRequiredMixin, generic.CreateView):
-    model = Session
-    form_class = SessionForm
-    template_name = 'core/session_form.html'
-
-    def form_valid(self, form):
+class SessionCreateForInterviewView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
         interview = get_object_or_404(Interview, pk=self.kwargs['interview_pk'])
-        form.instance.interview = interview
-        return super().form_valid(form)
+        session = Session.objects.create(
+            interview=interview,
+        )
+        return redirect('core:session_frame', session_id=session.session_id)
+    
+def session_frame(request, session_id):
+    return render(request, 'core/session_frame.html', {'session_id': session_id})
 
-    def get_success_url(self):
-        return reverse_lazy('core:interview_detail', kwargs={'pk': self.kwargs['interview_pk']})
 
+
+
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+def analyze_view(conversation_instance):
+    # Your analysis logic here, call the API to get the next question
+    # ...
+    next_question = "Test NextQuestion"
+    ai_conversation = Conversation.objects.create(
+        session=conversation_instance.session,
+        speaker='ai',
+        text=next_question  # Assume next_question is obtained from your analysis
+    )
+
+    # Broadcast the new question to TranscriptConsumer
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        'transcript_group',  # Assuming the group name is 'transcript_group'
+        {
+            'type': 'send.question',
+            'question': next_question
+        }
+    )
+    
 
 def home(request):
     return render(request, "core/home.html")

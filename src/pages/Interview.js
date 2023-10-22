@@ -1,9 +1,57 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from 'react';
 
 const Interview = () => {
   const videoRef = useRef(null);
   let mediaStream = null;
   let webSocket = null;
+
+  const [transcript, setTranscript] = useState('');
+  const [question, setQuestion] = useState('');
+  const [sessionID, setSessionID] = useState(null);  // New state to hold session ID
+
+  const getSessionID = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('session_id');
+  };
+
+  useEffect(() => {
+    // Set session ID on component mount
+    setSessionID(getSessionID());
+  }, []);
+
+  const handleKeypress = (event) => {
+    if (event.keyCode === 32 && webSocket && webSocket.readyState === WebSocket.OPEN) {  // Spacebar keycode
+      webSocket.send(JSON.stringify({ action: 'save_transcript', transcript, session_id: sessionID }));
+      setTranscript('');  // Reset transcript for the next chunk of conversation
+    }
+  };
+
+
+  const handleTranscriptMessage = (message) => {
+    try {
+      // Attempt to parse the message data as JSON
+      const data = JSON.parse(message.data);
+      if (data.action === 'new_question') {
+        console.log(data.question.question);
+        setQuestion(data.question.question);
+      } else if (data.action === 'new_transcript') {
+        // Assume the message contains transcript text if the action is 'new_transcript'
+        setTranscript(prevTranscript => prevTranscript + ' ' + data.transcript);
+      }
+    } catch (error) {
+      // If parsing as JSON fails, treat the message data as plain text
+      const received = message.data;
+      setTranscript(prevTranscript => prevTranscript + ' ' + received);
+    }
+  };
+  
+
+  useEffect(() => {
+    document.addEventListener('keypress', handleKeypress);
+    return () => {
+      document.removeEventListener('keypress', handleKeypress);
+    };
+  }, [transcript, sessionID]);  // Include sessionID as a dependency
 
   const startStreaming = async () => {
     try {
@@ -16,11 +64,13 @@ const Interview = () => {
       }
 
       // Initialize WebSocket connection
-      webSocket = new WebSocket('ws://localhost:8000/listen')
-      // webSocket = new WebSocket('ws://your_django_server_url/ws/some_path/');
+      webSocket = new WebSocket(`ws://localhost:8000/listen/${sessionID}/`);
+      // Include session ID in the WebSocket URL or as a message after connecting
       webSocket.onopen = () => {
         // Handle WebSocket open event
         console.log("WebSocket connection opened");
+        // Optionally send session ID over WebSocket after connecting
+        // webSocket.send(JSON.stringify({ action: 'start_session', session_id: sessionID }));
 
         // Send data over WebSocket
         const mediaRecorder = new MediaRecorder(mediaStream);
@@ -29,8 +79,9 @@ const Interview = () => {
             webSocket.send(event.data);
           }
         };
-        mediaRecorder.start(100); // Sending data in 100ms chunks
+        mediaRecorder.start(5000); // Sending data in 100ms chunks
       };
+      webSocket.onmessage = handleTranscriptMessage;
     } catch (error) {
       console.error("Error accessing media devices.", error);
     }
@@ -63,106 +114,10 @@ const Interview = () => {
           Stop Streaming
         </button>
       </div>
+      <div id="transcript">{transcript}</div>
+      <div id="question">{question}</div>
     </div>
   );
 };
 
 export default Interview;
-
-// import React, { useRef, useState, useEffect } from 'react';
-
-// const Interview = () => {
-//     const [recording, setRecording] = useState(false);
-//     const [videoURLs, setVideoURLs] = useState([]);
-//     const videoRef = useRef(null);
-//     let mediaRecorder = useRef(null);
-//     let chunks = useRef([]);
-
-//     const handleData = () => {
-//         if (chunks.current.length) {
-//             let blob = new Blob(chunks.current, { type: "video/webm" });
-//             let url = URL.createObjectURL(blob);
-//             setVideoURLs(prevURLs => [...prevURLs, url]);
-//             chunks.current = [];
-//         }
-//     };
-
-//     const startCapture = async () => {
-//         if (mediaRecorder.current) return;
-
-//         try {
-//             const stream = await navigator.mediaDevices.getUserMedia({
-//                 video: true,
-//                 audio: true
-//             });
-
-//             videoRef.current.srcObject = stream;
-
-//             if (MediaRecorder.isTypeSupported('video/webm')) {
-//                 mediaRecorder.current = new MediaRecorder(stream, { mimeType: "video/webm" });
-//             } else {
-//                 console.error("MIME type not supported");
-//                 return;
-//             }
-
-//             mediaRecorder.current.ondataavailable = (e) => {
-//                 chunks.current.push(e.data);
-//                 handleData(); // Immediately handle the data
-//             };
-
-//             mediaRecorder.current.start(10000); // Collect data every 10 seconds
-//             setRecording(true);
-
-//         } catch (error) {
-//             console.error("Error starting capture:", error);
-//         }
-//     };
-
-//     const stopCapture = () => {
-//         if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
-//             mediaRecorder.current.stop();
-//             handleData();
-//             videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-//             setRecording(false);
-//         }
-//     };
-
-//     useEffect(() => {
-//         return () => {
-//             if (videoRef.current && videoRef.current.srcObject) {
-//                 videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-//             }
-//         };
-//     }, []);
-
-//     return (
-//         <div className="flex flex-col items-center mt-4">
-//             <video ref={videoRef} autoPlay muted className="border p-4"></video>            <div className="mt-4">
-//                 {!recording ? (
-//                     <button
-//                         className="bg-blue-500 text-white px-6 py-2 rounded"
-//                         onClick={startCapture}
-//                     >
-//                         Start
-//                     </button>
-//                 ) : (
-//                     <button
-//                         className="bg-red-500 text-white px-6 py-2 rounded"
-//                         onClick={stopCapture}
-//                     >
-//                         Stop
-//                     </button>
-//                 )}
-//             </div>
-//             <div className="mt-4">
-//                 {videoURLs.map((url, index) => (
-//                     <div key={index} className="mt-4">
-//                         <video controls src={url} className="border p-4"></video>
-//                     </div>
-//                 ))}
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default Interview;
