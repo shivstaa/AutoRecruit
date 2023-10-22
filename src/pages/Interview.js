@@ -95,6 +95,33 @@ const Interview = () => {
     if (webSocket) {
       webSocket.close();
     }
+    initiateAnalysis();
+  };
+  
+  const initiateAnalysis = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/session/${sessionID}/analysis/initiate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any other headers required by your Django backend here
+        },
+        // Include credentials if your API requires authentication
+        credentials: 'include',
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'Analysis started') {
+          // Redirect to the analysis status page
+          window.location.href = data.analysis_url;
+        }
+      } else {
+        console.error("Failed to initiate analysis", response.statusText);
+      }
+    } catch (error) {
+      console.error("Failed to initiate analysis", error);
+    }
   };
 
   return (

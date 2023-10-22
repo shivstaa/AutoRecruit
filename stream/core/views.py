@@ -1,18 +1,17 @@
 from datetime import timezone
 from django.shortcuts import redirect, render
-from django.contrib.auth.views import LoginView
-from django.contrib.auth.views import LogoutView
-from django.urls import reverse_lazy
-from django.views import View, generic
-from django.contrib.auth.forms import UserCreationForm
-
-from django.views import generic
-from django.urls import reverse_lazy
-from .models import Conversation, Interview, Session
-from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session
+from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy, reverse
+from django.views import View, generic
 from django.views.generic import DeleteView
+from django.contrib.auth.forms import UserCreationForm
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+
+from .tasks import start_analysis
+from .models import Conversation, Interview, Session, Analysis
+from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session
 
 
 class InterviewCreateView(LoginRequiredMixin, generic.CreateView):
@@ -93,7 +92,51 @@ class SessionCreateForInterviewView(LoginRequiredMixin, View):
 def session_frame(request, session_id):
     return render(request, 'core/session_frame.html', {'session_id': session_id})
 
+class AnalysisInitiateAPIView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        session = get_object_or_404(Session, pk=self.kwargs['pk'])
+        start_analysis(session.id)
+        return JsonResponse({'status': 'Analysis started', 'analysis_url': reverse('core:analysis_status', args=[session.id])})
 
+class AnalysisInitiateView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        session = get_object_or_404(Session, pk=self.kwargs['pk'])
+        # Call your function to start analysis here, passing the session as an argument
+        start_analysis(session)
+        # Redirect to a page to show analysis status or results
+        return redirect('core:analysis_status', pk=session.pk)
+
+    def post(self, request, *args, **kwargs):
+        interview = get_object_or_404(Interview, pk=self.kwargs['pk'])
+        start_analysis(interview.id)
+        return redirect('core:analysis_status', pk=interview.pk)
+
+class AnalysisStatusView(LoginRequiredMixin, View):
+    template_name = 'core/analysis_status.html'
+    
+    def get(self, request, *args, **kwargs):
+        interview = get_object_or_404(Interview, pk=self.kwargs['pk'])
+        analysis = get_object_or_404(Analysis, interview=interview)
+        context = {'analysis': analysis, 'interview': interview}
+        return render(request, self.template_name, context)
+
+class AnalysisResultView(LoginRequiredMixin, View):
+    template_name = 'core/analysis_result.html'
+    
+    def get(self, request, *args, **kwargs):
+        analysis = get_object_or_404(Analysis, pk=self.kwargs['pk'])
+        context = {'analysis': analysis}
+        return render(request, self.template_name, context)
+
+class AnalysisCheckStatusView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        analysis = get_object_or_404(Analysis, pk=self.kwargs['pk'])
+        data = {
+            'status': analysis.status,
+            'comments': analysis.comments,
+            'scores': analysis.scores,
+        }
+        return JsonResponse(data)
 
 
 

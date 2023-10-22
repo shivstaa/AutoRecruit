@@ -21,3 +21,8 @@ class SessionForm(forms.ModelForm):
     class Meta:
         model = Session
         fields = ['interview', 'questions']
+
+
+
+class AnalysisForm(forms.ModelForm):
+    pass
