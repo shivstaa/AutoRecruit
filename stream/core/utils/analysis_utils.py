@@ -3,6 +3,7 @@ import time
 from typing import List, Dict
 
 import openai
+import PyPDF2
 
 from .chat_utils import call_openai
 
@@ -65,3 +66,66 @@ def analysis(interview_so_far: List[Dict[str, str]]):
             print(f"Failed to get response for {category}")
 
     return categories
+
+
+def extract_resume(path): 
+    with open(path, 'rb') as file: 
+        PDF = PyPDF2.PdfReader(file)
+        pages = len(PDF.pages)
+        key = '/Annots'
+        uri = '/URI'
+        ank = '/A'
+
+        text = [] 
+
+        for page in range(pages):
+            pageSliced = PDF.pages[page]
+            text += [pageSliced.extract_text()]
+
+        return text
+
+
+def resume_analyzer(file_path):
+    """
+    analyze resume from file_path
+    """
+    pass
+
+
+def get_feedback(model, company_name, job_description, text_resume): 
+    start_time = time.time()
+
+    prompt = f"""
+    Given below is a job description and the resume of the applicant who is applying for the position. They are labelled as {{DESCRIPTION}} and {{RESUME}}.
+
+    Generate a context map from the texts. A context map is a JSON object of 10 key:[value1, value2] pairs. The keys address interview-specific topics like "Values of the company", "Qualifications", "Experience", and "Skills". The first key must be labelled "Summary" and must highlight the key points that the resume has to improve upon. 
+    For the first 5 pairs, value1 answer the keys in context to the resume, as to what the applicant has to improve on and value2 is a score that you must generate which quantifies how much the applicant is fit for the job.
+    For the next 5 pairs, value1 should be the index of a location in the resume that is fitting the job description and can be rewritten specifically for the purpose. And value2 will be the rewritten portion of text.
+
+    ONLY RETURN THE JSON OBJECT. Keep every KEY unique.
+
+    ```
+    {{DESCRIPTION}}
+    {job_description}
+    ```
+
+    ```
+    {{RESUME}}
+    {text_resume}
+    ```
+    """
+
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=[
+            {"role": "user", "content": prompt}, 
+            {"role": "system", "content": f"You are an assistant that is helping a company, {company_name}, generate interview questions and assess the candidacy of applicants. You must evaluate all resumes with a focus on the overall skills listed in each of them."}
+        ],
+    )
+
+    generated_text = response['choices'][0]['message']['content'].strip()
+
+    print(model, ":", time.time() - start_time)
+
+    return generated_text
+
