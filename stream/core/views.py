@@ -8,15 +8,12 @@ from django.views.generic import DeleteView
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-
-<<<<<<< HEAD
+from .utils.analysis_utils import get_feedback
 from .tasks import start_analysis
 from .models import Conversation, Interview, Session, Analysis
 from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session
 
-=======
 import PyPDF2
->>>>>>> 1ae76889ce92b1a46fbd70384bb96e6edc35cd4d
 
 class InterviewCreateView(LoginRequiredMixin, generic.CreateView):
     model = Interview
@@ -181,6 +178,18 @@ def analyze_view(conversation_instance):
 
 def home(request):
     return render(request, "core/home.html")
+
+class ResumeAnalysisView(LoginRequiredMixin, View):
+    template_name = 'core/resume_analysis.html'
+
+    def get(self, request, *args, **kwargs):
+        interview = get_object_or_404(Interview, pk=self.kwargs['pk'])
+        company_name = interview.company_name
+        job_description = interview.job_description
+        text_resume = interview.resume_text
+        analysis = get_feedback('gpt-4', company_name, job_description, text_resume)
+        return render(request, self.template_name, {'analysis': analysis, 'interview': interview})
+
 
 
 def extract_resume(path): 
