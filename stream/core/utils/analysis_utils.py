@@ -98,12 +98,6 @@ def get_feedback(model, company_name, job_description, text_resume):
     prompt = f"""
     Given below is a job description and the resume of the applicant who is applying for the position. They are labelled as {{DESCRIPTION}} and {{RESUME}}.
 
-    Generate a context map from the texts. A context map is a JSON object of 10 key:[value1, value2] pairs. The keys address interview-specific topics like "Values of the company", "Qualifications", "Experience", and "Skills". The first key must be labelled "Summary" and must highlight the key points that the resume has to improve upon. 
-    For the first 5 pairs, value1 answer the keys in context to the resume, as to what the applicant has to improve on and value2 is a score that you must generate which quantifies how much the applicant is fit for the job.
-    For the next 5 pairs, value1 should be the index of a location in the resume that is fitting the job description and can be rewritten specifically for the purpose. And value2 will be the rewritten portion of text.
-
-    ONLY RETURN THE JSON OBJECT. Keep every KEY unique.
-
     ```
     {{DESCRIPTION}}
     {job_description}
@@ -113,6 +107,8 @@ def get_feedback(model, company_name, job_description, text_resume):
     {{RESUME}}
     {text_resume}
     ```
+
+    Read the above carefully, and produce a relatively detailed analysis of bullet points and comments on the fit between the resume and the job. Make critical comments and kind comments if possible.
     """
 
     response = openai.ChatCompletion.create(
