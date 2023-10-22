@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import openai
 from elevenlabs import set_api_key, generate, stream
 
-from chat_utils import chat_stream
 
 load_dotenv()
 

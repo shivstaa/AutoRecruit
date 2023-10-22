@@ -44,7 +44,6 @@ class TranscriptConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             raise Exception(f'Could not open socket: {e}')
 
-
     async def connect(self):
         # This could be a constant, or it could be based on some aspect of the WebSocket
         # For example, it could include the user id, or some other identifier.
