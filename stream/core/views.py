@@ -151,4 +151,4 @@ def extract_resume(path):
             pageSliced = PDF.pages[page]
             text += [pageSliced.extract_text()]
 
-        return text
+        return "\n".join(text)
