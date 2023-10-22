@@ -8,7 +8,7 @@ import queue
 
 import openai
 import whisper
-from elevenlabs import set_api_key, generate, stream
+from elevenlabs import set_api_key, generate, stream, play
 
 from .models import Session
 from .chat_utils import chat_stream
@@ -46,7 +46,7 @@ class InterviewerVoice:
         
         while pre_fetch_thread.is_alive() or not self.audio_buffer.buffer.empty():
             audio = self.audio_buffer.get_audio()
-            stream(audio)
+            play(audio)
         end_time = time.time()
         print(f"Total Time for Speaking: {end_time - start_time:.4f} seconds")
 
