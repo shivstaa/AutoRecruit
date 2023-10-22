@@ -10,7 +10,7 @@ from .common import stub
 )
 class ChatGPT:
     @method()
-    def generate_text(self, messages: List[Dict[str, str]], model, **kwargs):
+    def generate(self, messages: List[Dict[str, str]], model, **kwargs):
         import openai
 
         return openai.ChatCompletion.create(

@@ -74,13 +74,13 @@ def web():
         transcription_text = transcriber.transcribe_segment.remote(content, None)
         return {"text": transcription_text}
 
-    @web_app.post("/generate_text")
-    async def generate_text(request: Request):
+    @web_app.post("/generate")
+    async def generate(request: Request):
         body = await request.json()
         messages = body.get("messages")
         model = body.get("model")
 
-        completion = llm.generate_text.remote(messages, model)
+        completion = llm.generate.remote(messages, model)
         return {"text": completion}
 
     @web_app.post("/speak")
