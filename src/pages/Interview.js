@@ -13,7 +13,7 @@ const Interview = () => {
       }
       
       // Initialize WebSocket connection
-      webSocket = new WebSocket('localhost:8000/listen')
+      webSocket = new WebSocket('ws://localhost:8000/listen')
       // webSocket = new WebSocket('ws://your_django_server_url/ws/some_path/');
       webSocket.onopen = () => {
         // Handle WebSocket open event
