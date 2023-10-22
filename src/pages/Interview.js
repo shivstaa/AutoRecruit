@@ -1,5 +1,41 @@
 import React, { useRef, useState, useEffect } from 'react';
+<style jsx>{`
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure the modal sits on top of other elements */
+  }
 
+  .modal-content {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 4px;
+    width: 80%;
+    max-width: 500px;
+  }
+`}</style>
+
+function QuestionModal({ question, onClose }) {
+  if (!question) {
+    return null;
+  }
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <p>{question}</p>
+        <button onClick={onClose}>I am ready, Answer this question</button>
+      </div>
+    </div>
+  );
+}
 const Interview = () => {
   const videoRef = useRef(null);
   let mediaStream = null;
@@ -7,51 +43,47 @@ const Interview = () => {
 
   const [transcript, setTranscript] = useState('');
   const [question, setQuestion] = useState('');
-  const [sessionID, setSessionID] = useState(null);  // New state to hold session ID
+  const [sessionID, setSessionID] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalQuestion, setModalQuestion] = useState('');
 
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTranscript('');
+  };
+
+  const handleNextQuestion = () => {
+    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+      webSocket.send(JSON.stringify({ action: 'next_question', transcript, session_id: sessionID }));
+      openModal();  // Open the modal when requesting the next question
+    }
+  };
   const getSessionID = () => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('session_id');
   };
 
   useEffect(() => {
-    // Set session ID on component mount
     setSessionID(getSessionID());
   }, []);
 
-  const handleKeypress = (event) => {
-    if (event.keyCode === 32 && webSocket && webSocket.readyState === WebSocket.OPEN) {  // Spacebar keycode
-      webSocket.send(JSON.stringify({ action: 'save_transcript', transcript, session_id: sessionID }));
-      setTranscript('');  // Reset transcript for the next chunk of conversation
-    }
-  };
-
-
   const handleTranscriptMessage = (message) => {
     try {
-      // Attempt to parse the message data as JSON
       const data = JSON.parse(message.data);
       if (data.action === 'new_question') {
-        console.log(data.question.question);
-        setQuestion(data.question.question);
-      } else if (data.action === 'new_transcript') {
-        // Assume the message contains transcript text if the action is 'new_transcript'
+        setModalQuestion(data.question.question);  // Update the modal question when a new question is received
+      } else {
         setTranscript(prevTranscript => prevTranscript + ' ' + data.transcript);
       }
     } catch (error) {
-      // If parsing as JSON fails, treat the message data as plain text
       const received = message.data;
       setTranscript(prevTranscript => prevTranscript + ' ' + received);
     }
   };
-  
-
-  useEffect(() => {
-    document.addEventListener('keypress', handleKeypress);
-    return () => {
-      document.removeEventListener('keypress', handleKeypress);
-    };
-  }, [transcript, sessionID]);  // Include sessionID as a dependency
 
   const startStreaming = async () => {
     try {
@@ -77,7 +109,7 @@ const Interview = () => {
             webSocket.send(event.data);
           }
         };
-        mediaRecorder.start(5000); // Sending data in 100ms chunks
+        mediaRecorder.start(150); // Sending data in 100ms chunks
       };
       webSocket.onmessage = handleTranscriptMessage;
     } catch (error) {
@@ -93,6 +125,7 @@ const Interview = () => {
     if (webSocket) {
       webSocket.close();
     }
+    handleNextQuestion();  // Trigger next question when stopping streaming
   };
 
   return (
@@ -101,6 +134,8 @@ const Interview = () => {
       <div>
         <button onClick={startStreaming} className="mr-4 px-4 py-2 bg-blue-500 text-white rounded">Start Streaming</button>
         <button onClick={stopStreaming} className="px-4 py-2 bg-red-500 text-white rounded">Stop Streaming</button>
+        <button onClick={handleNextQuestion} className="px-4 py-2 bg-green-500 text-white rounded">Next Question</button>
+        <QuestionModal question={modalQuestion} onClose={closeModal} />
       </div>
       <div id="transcript">{transcript}</div>
       <div id="question">{question}</div>
