@@ -118,8 +118,8 @@ def get_feedback(model, company_name, job_description, text_resume):
     response = openai.ChatCompletion.create(
         model=model,
         messages=[
-            {"role": "user", "content": prompt}, 
             {"role": "system", "content": f"You are an assistant that is helping a company, {company_name}, generate interview questions and assess the candidacy of applicants. You must evaluate all resumes with a focus on the overall skills listed in each of them."}
+            {"role": "user", "content": prompt}, 
         ],
     )
 
