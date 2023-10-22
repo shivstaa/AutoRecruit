@@ -21,6 +21,7 @@ class Interview(models.Model):
     def __str__(self):
         return self.job_title
 
+
 class Session(models.Model):
     session_id = models.CharField(max_length=32, unique=True, editable=False)  # hash field
     interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name='sessions')

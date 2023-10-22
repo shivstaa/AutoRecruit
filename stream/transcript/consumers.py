@@ -1,12 +1,16 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+import os
 from dotenv import load_dotenv
-from deepgram import Deepgram
 from typing import Dict
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from core.models import Session, Conversation
 import os
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+from deepgram import Deepgram
+
 
 load_dotenv()
 

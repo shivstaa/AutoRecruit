@@ -9,13 +9,15 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
-from pathlib import Path
-from django.urls import reverse_lazy
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+from django.urls import reverse_lazy
+
 
 load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
