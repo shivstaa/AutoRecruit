@@ -144,6 +144,11 @@ def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
     return transcription_text
 
 
+
+def real_time_conversation():
+    pass
+
+
 if __name__ == "__main__":
     import json
     with open("interview.json", "r") as f:
