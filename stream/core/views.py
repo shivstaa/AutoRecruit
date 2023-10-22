@@ -15,6 +15,7 @@ from .forms import InterviewForm, SessionForm  # Assuming you have created forms
 
 import PyPDF2
 
+
 class InterviewCreateView(LoginRequiredMixin, generic.CreateView):
     model = Interview
     form_class = InterviewForm
