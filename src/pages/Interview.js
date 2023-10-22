@@ -87,24 +87,26 @@ const Interview = () => {
 
   const startStreaming = async () => {
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-      
+
       // Initialize WebSocket connection
       webSocket = new WebSocket(`ws://localhost:8000/listen/${sessionID}/`);
       // Include session ID in the WebSocket URL or as a message after connecting
       webSocket.onopen = () => {
         // Handle WebSocket open event
         console.log("WebSocket connection opened");
-        
         // Optionally send session ID over WebSocket after connecting
         // webSocket.send(JSON.stringify({ action: 'start_session', session_id: sessionID }));
-        
+
         // Send data over WebSocket
         const mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = event => {
+        mediaRecorder.ondataavailable = (event) => {
           if (webSocket && webSocket.readyState === WebSocket.OPEN) {
             webSocket.send(event.data);
           }
@@ -113,14 +115,14 @@ const Interview = () => {
       };
       webSocket.onmessage = handleTranscriptMessage;
     } catch (error) {
-      console.error('Error accessing media devices.', error);
+      console.error("Error accessing media devices.", error);
     }
   };
 
   const stopStreaming = () => {
     if (mediaStream) {
       let tracks = mediaStream.getTracks();
-      tracks.forEach(track => track.stop());
+      tracks.forEach((track) => track.stop());
     }
     if (webSocket) {
       webSocket.close();
