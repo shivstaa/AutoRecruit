@@ -72,7 +72,7 @@ class ElevenLabsTTS:
 
 
 def interview_reply(
-    role: str, job_description: str, company: str,
+    role: str, job_description: str, company_name: str,
     resume: str, name: str,
     interview_so_far: List[Dict[str, str]], 
     n: int, 
@@ -80,7 +80,7 @@ def interview_reply(
     tts_engine: ElevenLabsTTS
 ):
     messages = [
-        {"role": "system", "content": f"""You are an interviewer, conducting behavioral interviews to select the most skilled and well-rounded candidates for the role of {role} at {company}. You generate interview questions given a job description, the resume of an interviewee to that job, and the interview so far. Read carefully the job description and associated resume, as well as the instructions that follow. However, note that you are the expert of the interview process, so the following should be taken as guidelines, not as strict rules.
+        {"role": "system", "content": f"""You are an interviewer, conducting behavioral interviews to select the most skilled and well-rounded candidates for the role of {role} at {company_name}. You generate interview questions given a job description, the resume of an interviewee to that job, and the interview so far. Read carefully the job description and associated resume, as well as the instructions that follow. However, note that you are the expert of the interview process, so the following should be taken as guidelines, not as strict rules.
 
         Job Description:
         \"\"\"
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     
     role = interview_json['role']
     job_description = interview_json['job_description']
-    company = interview_json['company']
+    company_name = interview_json['company_name']
     resume = interview_json['resume']
     name = interview_json['name']
     interview_so_far = interview_json['interview_so_far']
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     interview_reply(
         role=role,
         job_description=job_description,
-        company=company,
+        company_name=company_name,
         resume=resume,
         name=name,
         interview_so_far=interview_so_far,
