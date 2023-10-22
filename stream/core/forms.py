@@ -6,7 +6,7 @@ import os
 class InterviewForm(forms.ModelForm):
     class Meta:
         model = Interview
-        fields = ['job_title', 'job_description', 'resume']
+        fields = ['job_title', 'company_name', 'job_description', 'resume']
 
         def clean_resume(self):
             resume = self.cleaned_data.get('resume')
