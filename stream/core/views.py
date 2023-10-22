@@ -9,10 +9,14 @@ from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
+<<<<<<< HEAD
 from .tasks import start_analysis
 from .models import Conversation, Interview, Session, Analysis
 from .forms import InterviewForm, SessionForm  # Assuming you have created forms for Interview and Session
 
+=======
+import PyPDF2
+>>>>>>> 1ae76889ce92b1a46fbd70384bb96e6edc35cd4d
 
 class InterviewCreateView(LoginRequiredMixin, generic.CreateView):
     model = Interview
@@ -21,8 +25,19 @@ class InterviewCreateView(LoginRequiredMixin, generic.CreateView):
     success_url = reverse_lazy('core:interview_list')  # Redirect to home page after successful creation
 
     def form_valid(self, form):
-        form.instance.user = self.request.user  # Set the user field to the currently logged-in user
-        return super().form_valid(form)
+        form.instance.user = self.request.user  
+
+        response = super().form_valid(form)  # First call to save the form
+
+        # Now the form has been saved, and the file has been stored, so you can access its path
+        if form.instance.resume:
+            file_path = form.instance.resume.path
+            directory = 'media/resumes'
+            form.instance.resume_text = extract_resume(file_path)
+            form.save()  # Save the form again to store the context map
+
+        return response 
+
     
 class InterviewDetailView(LoginRequiredMixin, generic.DetailView):
     model = Interview
@@ -166,3 +181,20 @@ def analyze_view(conversation_instance):
 
 def home(request):
     return render(request, "core/home.html")
+
+
+def extract_resume(path): 
+    with open(path, 'rb') as file: 
+        PDF = PyPDF2.PdfReader(file)
+        pages = len(PDF.pages)
+        key = '/Annots'
+        uri = '/URI'
+        ank = '/A'
+
+        text = [] 
+
+        for page in range(pages):
+            pageSliced = PDF.pages[page]
+            text += [pageSliced.extract_text()]
+
+        return "\n".join(text)

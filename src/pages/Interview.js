@@ -1,17 +1,17 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from "react";
 
 const Interview = () => {
   const videoRef = useRef(null);
   let mediaStream = null;
   let webSocket = null;
 
-  const [transcript, setTranscript] = useState('');
-  const [question, setQuestion] = useState('');
-  const [sessionID, setSessionID] = useState(null);  // New state to hold session ID
+  const [transcript, setTranscript] = useState("");
+  const [question, setQuestion] = useState("");
+  const [sessionID, setSessionID] = useState(null); // New state to hold session ID
 
   const getSessionID = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('session_id');
+    return urlParams.get("session_id");
   };
 
   useEffect(() => {
@@ -20,38 +20,49 @@ const Interview = () => {
   }, []);
 
   const handleKeypress = (event) => {
-    if (event.keyCode === 32 && webSocket && webSocket.readyState === WebSocket.OPEN) {  // Spacebar keycode
-      webSocket.send(JSON.stringify({ action: 'save_transcript', transcript, session_id: sessionID }));
-      setTranscript('');  // Reset transcript for the next chunk of conversation
+    if (
+      event.keyCode === 32 &&
+      webSocket &&
+      webSocket.readyState === WebSocket.OPEN
+    ) {
+      // Spacebar keycode
+      webSocket.send(
+        JSON.stringify({
+          action: "save_transcript",
+          transcript,
+          session_id: sessionID,
+        })
+      );
+      setTranscript(""); // Reset transcript for the next chunk of conversation
     }
   };
-
 
   const handleTranscriptMessage = (message) => {
     try {
       // Attempt to parse the message data as JSON
       const data = JSON.parse(message.data);
-      if (data.action === 'new_question') {
+      if (data.action === "new_question") {
         console.log(data.question.question);
         setQuestion(data.question.question);
-      } else if (data.action === 'new_transcript') {
+      } else if (data.action === "new_transcript") {
         // Assume the message contains transcript text if the action is 'new_transcript'
-        setTranscript(prevTranscript => prevTranscript + ' ' + data.transcript);
+        setTranscript(
+          (prevTranscript) => prevTranscript + " " + data.transcript
+        );
       }
     } catch (error) {
       // If parsing as JSON fails, treat the message data as plain text
       const received = message.data;
-      setTranscript(prevTranscript => prevTranscript + ' ' + received);
+      setTranscript((prevTranscript) => prevTranscript + " " + received);
     }
   };
-  
 
   useEffect(() => {
-    document.addEventListener('keypress', handleKeypress);
+    document.addEventListener("keypress", handleKeypress);
     return () => {
-      document.removeEventListener('keypress', handleKeypress);
+      document.removeEventListener("keypress", handleKeypress);
     };
-  }, [transcript, sessionID]);  // Include sessionID as a dependency
+  }, [transcript, sessionID]); // Include sessionID as a dependency
 
   const startStreaming = async () => {
     try {
@@ -88,12 +99,17 @@ const Interview = () => {
   };
 
   const stopStreaming = () => {
-    if (mediaStream) {
-      let tracks = mediaStream.getTracks();
-      tracks.forEach((track) => track.stop());
-    }
-    if (webSocket) {
-      webSocket.close();
+    const confirmation = window.confirm(
+      "Are you sure you want to stop the interview?"
+    );
+    if (confirmation) {
+      if (mediaStream) {
+        let tracks = mediaStream.getTracks();
+        tracks.forEach((track) => track.stop());
+      }
+      if (webSocket) {
+        webSocket.close();
+      }
     }
     initiateAnalysis();
   };
