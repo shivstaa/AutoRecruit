@@ -10,12 +10,6 @@ import openai
 import whisper
 from elevenlabs import set_api_key, generate, stream
 
-# import sys
-# import os
-
-# parent_folder_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# sys.path.insert(0, parent_folder_path)
-
 from models import Session
 from chat_utils import chat_stream
 
@@ -128,7 +122,6 @@ def interview_reply(
 
 
 def generate_interview_question(session: Session):
-
     session = Session.objects.get(session_id=session.session_id)
     role = session.interview.job_title
     job_description = session.interview.job_description
