@@ -1,0 +1,60 @@
+{% load static %}
+
+<style>
+.logo-full,
+.logo-small {
+  transition: opacity 0.3s;
+  max-height: 45px;
+  max-width: 100%;
+}
+
+.logo-small.d-none {
+  display: none;
+  opacity: 0;
+}
+
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light navbar-fixed" style="padding:2px">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{% url 'core:home' %}">
+        <img src="{% static 'core/images/default_logo.png' %}" alt="CoMint" height="45" class="d-inline-block align-text-top logo-full">
+        <img src="{% static 'core/images/default_logo.png' %}" alt="CoMint" height="30" class="d-inline-block align-text-top logo-small d-none">
+      </a>
+      
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" aria-current="page" href="{% url 'core:home' %}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'interview_list' %}active{% endif %}" href="{% url 'core:interview_list' %}">Interviews</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'session_list' %}active{% endif %}" href="{% url 'core:session_list' %}">Sessions</a>
+          </li>
+          </ul>
+        <ul class="navbar-nav">
+        {% if request.user.is_authenticated %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownAbout" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user-circle fa-lg"></i>
+              <span class="ms-2">{{ request.user.first_name }}</span>
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownAbout">
+              <li><a class="dropdown-item" href="{% url 'core:logout' %}">Logout</a></li>
+          </ul>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'core:login' %}">Login</a>
+        </li>
+      {% endif %}
+    </ul>
+      </div>
+    </div>
+  </nav>
+  
