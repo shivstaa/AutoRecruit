@@ -9,7 +9,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
-from .utils.analysis_utils import get_feedback
+from .analysis_utils import get_feedback
 
 
 from .tasks import start_analysis
