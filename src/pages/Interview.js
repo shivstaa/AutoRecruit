@@ -1,26 +1,25 @@
 import React, { useRef, useState, useEffect } from 'react';
-<style jsx>{`
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000; /* Ensure the modal sits on top of other elements */
-  }
 
-  .modal-content {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 4px;
-    width: 80%;
-    max-width: 500px;
-  }
-`}</style>
+const modalOverlayStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 1000,
+};
+
+const modalContentStyle = {
+  backgroundColor: '#ffffff',
+  padding: '20px',
+  borderRadius: '4px',
+  width: '80%',
+  maxWidth: '500px',
+};
 
 function QuestionModal({ question, onClose }) {
   if (!question) {
@@ -28,8 +27,8 @@ function QuestionModal({ question, onClose }) {
   }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div style={modalOverlayStyle}>
+      <div style={modalContentStyle}>
         <p>{question}</p>
         <button onClick={onClose}>I am ready, Answer this question</button>
       </div>
@@ -137,7 +136,7 @@ const Interview = () => {
         <button onClick={startStreaming} className="mr-4 px-4 py-2 bg-blue-500 text-white rounded">Start Streaming</button>
         <button onClick={stopStreaming} className="px-4 py-2 bg-red-500 text-white rounded">Stop Streaming</button>
         <button onClick={handleNextQuestion} className="px-4 py-2 bg-green-500 text-white rounded">Next Question</button>
-        <QuestionModal question={modalQuestion} onClose={closeModal} />
+        {isModalOpen && <QuestionModal question={modalQuestion} onClose={closeModal} />}
       </div>
       <div id="transcript">{transcript}</div>
       <div id="question">{question}</div>
