@@ -21,8 +21,6 @@ transcriber_image = (
 
 
 @stub.cls(
-    # gpu="A10G",
-    # cpu="A10",
     container_idle_timeout=180,
     image=transcriber_image,
     secret=Secret.from_name("my-openai-secret"),
@@ -32,9 +30,8 @@ class Whisper:
         import torch
         import whisper
 
-        # self.use_gpu = torch.cuda.is_available()
-        # device = "cuda" if self.use_gpu else "cpu"
-        device = "cpu"
+        self.use_gpu = torch.cuda.is_available()
+        device = "cuda" if self.use_gpu else "cpu"
         self.models = {
             model_name: whisper.load_model(model_name, device=device) for model_name in MODEL_NAMES
         }

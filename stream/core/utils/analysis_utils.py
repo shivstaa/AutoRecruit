@@ -3,6 +3,7 @@ import time
 from typing import List, Dict
 
 import openai
+import PyPDF2
 
 from .chat_utils import call_openai
 
@@ -65,3 +66,62 @@ def analysis(interview_so_far: List[Dict[str, str]]):
             print(f"Failed to get response for {category}")
 
     return categories
+
+
+def extract_resume(path): 
+    with open(path, 'rb') as file: 
+        PDF = PyPDF2.PdfReader(file)
+        pages = len(PDF.pages)
+        key = '/Annots'
+        uri = '/URI'
+        ank = '/A'
+
+        text = [] 
+
+        for page in range(pages):
+            pageSliced = PDF.pages[page]
+            text += [pageSliced.extract_text()]
+
+        return text
+
+
+def resume_analyzer(file_path):
+    """
+    analyze resume from file_path
+    """
+    pass
+
+
+def get_feedback(model, company_name, job_description, text_resume): 
+    start_time = time.time()
+
+    prompt = f"""
+    Given below is a job description and the resume of the applicant who is applying for the position. They are labelled as {{DESCRIPTION}} and {{RESUME}}.
+
+    ```
+    {{DESCRIPTION}}
+    {job_description}
+    ```
+
+    ```
+    {{RESUME}}
+    {text_resume}
+    ```
+
+    Read the above carefully, and produce a relatively detailed analysis of bullet points and comments on the fit between the resume and the job. Make critical comments and kind comments if possible.
+    """
+
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": f"You are an assistant that is helping a company, {company_name}, generate interview questions and assess the candidacy of applicants. You must evaluate all resumes with a focus on the overall skills listed in each of them."},
+            {"role": "user", "content": prompt}, 
+        ],
+    )
+
+    generated_text = response['choices'][0]['message']['content'].strip()
+
+    print(model, ":", time.time() - start_time)
+
+    return generated_text
+

@@ -8,8 +8,10 @@ from django.urls import reverse
 class Interview(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interviews')
     job_title = models.CharField(max_length=255, blank=False, null=False)
+    company_name = models.CharField(max_length=255, blank=False, null=False)
     job_description = models.TextField(blank=True, null=True)
     resume = models.FileField(upload_to='resumes/')
+    resume_text = models.CharField(max_length=10000, blank=True, null=True)
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -21,14 +23,17 @@ class Interview(models.Model):
     def __str__(self):
         return self.job_title
 
-
 class Session(models.Model):
     session_id = models.CharField(max_length=32, unique=True, editable=False)  # hash field
     interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name='sessions')
     start_time = models.DateTimeField(auto_now=True)
     questions = models.JSONField(blank=True, null=True)  # You could use a TextField if your Django version < 3.1
     responses = models.JSONField(blank=True, null=True)  # You could use a TextField if your Django version < 3.1
+    performance_analysis = models.TextField(blank=True, null=True)
     performance_score = models.FloatField(null=True, blank=True)  # assuming score is a float value, set to null if not scored yet
+    analysis_status = models.CharField(max_length=10, default='pending', choices=[('pending', 'Pending'), ('processing', 'Processing'), ('done', 'Done')])
+    analysis_result = models.TextField(blank=True, null=True)
+
 
     def save(self, *args, **kwargs):
         if not self.pk:  # only on the first save
@@ -37,8 +42,9 @@ class Session(models.Model):
             self.session_id = hashlib.md5(base_string.encode()).hexdigest()
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def _str_(self):
         return f'Session for {self.interview.job_title} on {self.start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+
 
 # In core/models.py
 class Conversation(models.Model):
@@ -56,3 +62,16 @@ def analyze_conversation(sender, instance, created, **kwargs):
         from core.views import analyze_view
         # Call your core view to perform the analysis
         analyze_view(instance)
+
+
+# In core/models.py
+class Analysis(models.Model):
+    session = models.OneToOneField(Interview, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, default='pending')
+    comments = models.TextField(blank=True, null=True)
+    scores = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Analysis for {self.interview.job_title}'

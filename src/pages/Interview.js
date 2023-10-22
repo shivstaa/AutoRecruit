@@ -21,22 +21,23 @@ const modalContentStyle = {
   maxWidth: '500px',
 };
 
-function QuestionModal({ modalQuestion, onClose }) {
-
+function QuestionModal({ question, onClose }) {
   return (
     <div style={modalOverlayStyle}>
       <div style={modalContentStyle}>
-        <p>{modalQuestion}</p>
+        <p>{question}</p>
         <button onClick={onClose}>I am ready, Answer this question</button>
       </div>
     </div>
   );
 }
+
 const Interview = () => {
   const videoRef = useRef(null);
-  let mediaStream = null;
-  let webSocket = null;
-
+  const mediaStreamRef = useRef(null);
+  const webSocketRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  
   const [transcript, setTranscript] = useState('');
   const [sessionID, setSessionID] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,12 +53,12 @@ const Interview = () => {
   };
 
   const handleNextQuestion = () => {
-    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      console.log("first")
-      webSocket.send(JSON.stringify({ action: 'next_question', transcript, session_id: sessionID }));
-      openModal();  // Open the modal when requesting the next question
+    if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+      webSocketRef.current.send(JSON.stringify({ action: 'next_question', transcript, session_id: sessionID }));
+      openModal();
     }
   };
+
   const getSessionID = () => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('session_id');
@@ -71,7 +72,7 @@ const Interview = () => {
     try {
       const data = JSON.parse(message.data);
       if (data.action === 'new_question') {
-        setModalQuestion(data.question.question);  // Update the modal question when a new question is received
+        setModalQuestion(data.question.question);
       } else {
         setTranscript(prevTranscript => prevTranscript + ' ' + data.transcript);
       }
@@ -83,47 +84,44 @@ const Interview = () => {
 
   const startStreaming = async () => {
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({
+      mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
+
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        videoRef.current.srcObject = mediaStreamRef.current;
       }
 
-      // Initialize WebSocket connection
-      webSocket = new WebSocket(`ws://localhost:8000/listen/${sessionID}/`);
-      // Include session ID in the WebSocket URL or as a message after connecting
-      webSocket.onopen = () => {
-        // Handle WebSocket open event
+      webSocketRef.current = new WebSocket(`ws://localhost:8000/listen/${sessionID}/`);
+      webSocketRef.current.onopen = () => {
         console.log("WebSocket connection opened");
-        // Optionally send session ID over WebSocket after connecting
-        // webSocket.send(JSON.stringify({ action: 'start_session', session_id: sessionID }));
-
-        // Send data over WebSocket
-        const mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = (event) => {
-          if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-            webSocket.send(event.data);
+        mediaRecorderRef.current = new MediaRecorder(mediaStreamRef.current);
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+            webSocketRef.current.send(event.data);
           }
         };
-        mediaRecorder.start(150); // Sending data in 100ms chunks
+        mediaRecorderRef.current.start(150);
       };
-      webSocket.onmessage = handleTranscriptMessage;
+      webSocketRef.current.onmessage = handleTranscriptMessage;
     } catch (error) {
       console.error("Error accessing media devices.", error);
     }
   };
 
   const stopStreaming = () => {
-    if (mediaStream) {
-      let tracks = mediaStream.getTracks();
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+    }
+    if (mediaStreamRef.current) {
+      let tracks = mediaStreamRef.current.getTracks();
       tracks.forEach((track) => track.stop());
     }
-    if (webSocket) {
-      webSocket.close();
+    if (webSocketRef.current) {
+      webSocketRef.current.close();
     }
-    handleNextQuestion();  // Trigger next question when stopping streaming
+    handleNextQuestion();
   };
 
   return (

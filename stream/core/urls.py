@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import InterviewDetailView, SessionDeleteView, SessionDetailView,UserRegistrationView, UserLoginView, UserLogoutView, home, InterviewCreateView, SessionCreateView, InterviewListView, SessionListView, InterviewDeleteView, SessionCreateForInterviewView, session_frame
+from .views import InterviewDetailView, ResumeAnalysisView, SessionDeleteView, SessionDetailView,UserRegistrationView, UserLoginView, UserLogoutView, home, InterviewCreateView, SessionCreateView, InterviewListView, SessionListView, InterviewDeleteView, SessionCreateForInterviewView, AnalysisInitiateAPIView, AnalysisInitiateView, AnalysisStatusView, AnalysisResultView, AnalysisCheckStatusView, session_frame
 
 app_name = 'core'
 urlpatterns = [
@@ -16,6 +16,13 @@ urlpatterns = [
     path('session/<int:pk>/delete/', SessionDeleteView.as_view(), name='session_delete'),
     path('interview/<int:pk>/delete/', InterviewDeleteView.as_view(), name='interview_delete'),
     path('interview/<int:pk>/', InterviewDetailView.as_view(), name='interview_detail'),
+    path('interview/<int:pk>/analysis/', ResumeAnalysisView.as_view(), name='resume_analysis'),
     path('interview/<int:interview_pk>/session/new/', SessionCreateForInterviewView.as_view(), name='session_create_for_interview'),
     path('session/<str:session_id>/frame/', session_frame, name='session_frame'),
+    path('api/session/<int:pk>/analysis/initiate/', AnalysisInitiateAPIView.as_view(), name='api_analysis_initiate_session'),
+    path('analysis/<int:pk>/initiate/', AnalysisInitiateView.as_view(), name='analysis_initiate'),
+    path('analysis/<int:pk>/status/', AnalysisStatusView.as_view(), name='analysis_status'),
+    path('analysis/<int:pk>/result/', AnalysisResultView.as_view(), name='analysis_result'),
+    path('analysis/<int:pk>/check_status/', AnalysisCheckStatusView.as_view(), name='analysis_check_status'),
+
 ]

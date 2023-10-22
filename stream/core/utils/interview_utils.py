@@ -1,3 +1,4 @@
+import io
 import os
 import time
 from typing import List, Dict, Generator
@@ -6,6 +7,7 @@ from threading import Thread
 import queue
 
 import openai
+import whisper
 from elevenlabs import set_api_key, generate, stream
 
 from chat_utils import chat_stream
@@ -72,7 +74,7 @@ class ElevenLabsTTS:
 
 
 def interview_reply(
-    role: str, job_description: str, company: str,
+    role: str, job_description: str, company_name: str,
     resume: str, name: str,
     interview_so_far: List[Dict[str, str]], 
     n: int, 
@@ -80,7 +82,7 @@ def interview_reply(
     tts_engine: ElevenLabsTTS
 ):
     messages = [
-        {"role": "system", "content": f"""You are an interviewer, conducting behavioral interviews to select the most skilled and well-rounded candidates for the role of {role} at {company}. You generate interview questions given a job description, the resume of an interviewee to that job, and the interview so far. Read carefully the job description and associated resume, as well as the instructions that follow. However, note that you are the expert of the interview process, so the following should be taken as guidelines, not as strict rules.
+        {"role": "system", "content": f"""You are an interviewer, conducting behavioral interviews to select the most skilled and well-rounded candidates for the role of {role} at {company_name}. You generate interview questions given a job description, the resume of an interviewee to that job, and the interview so far. Read carefully the job description and associated resume, as well as the instructions that follow. However, note that you are the expert of the interview process, so the following should be taken as guidelines, not as strict rules.
 
         Job Description:
         \"\"\"
@@ -117,6 +119,36 @@ def interview_reply(
     voice.speak_stream(text_stream)
 
 
+def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
+    """
+    Transcribes the given audio data using OpenAI's Whisper ASR model.
+
+    :param audio_data: Byte array of the audio data.
+    :param model_name: Name of the Whisper ASR model to use. Default is "base.en".
+    :return: Transcribed text.
+    """
+    # Load Whisper ASR model
+    model = whisper.load_model(model_name)
+
+    # Convert audio bytes to a file-like object
+    audio_file = io.BytesIO(audio_data)
+    audio_file.name = "audio.wav"
+
+    # Convert audio file to numpy array
+    audio = whisper.load_audio(audio_file)
+
+    # Perform transcription
+    result = model.transcribe(audio)
+    transcription_text = result["text"]
+
+    return transcription_text
+
+
+
+def real_time_conversation():
+    pass
+
+
 if __name__ == "__main__":
     import json
     with open("interview.json", "r") as f:
@@ -124,7 +156,7 @@ if __name__ == "__main__":
     
     role = interview_json['role']
     job_description = interview_json['job_description']
-    company = interview_json['company']
+    company_name = interview_json['company_name']
     resume = interview_json['resume']
     name = interview_json['name']
     interview_so_far = interview_json['interview_so_far']
@@ -134,7 +166,7 @@ if __name__ == "__main__":
     interview_reply(
         role=role,
         job_description=job_description,
-        company=company,
+        company_name=company_name,
         resume=resume,
         name=name,
         interview_so_far=interview_so_far,

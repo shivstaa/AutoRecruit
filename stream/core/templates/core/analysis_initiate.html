@@ -1,0 +1,7 @@
+<!-- core/templates/core/analysis_initiate.html -->
+<h1>Start Analysis for {{ interview.job_title }}</h1>
+<form method="post" action="{% url 'core:analysis_initiate' pk=interview.pk %}">
+  {% csrf_token %}
+  <button type="submit">Start Analysis</button>
+</form>
+<a href="{% url 'core:interview_list' %}">Cancel</a>

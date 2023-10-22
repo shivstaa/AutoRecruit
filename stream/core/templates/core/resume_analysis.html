@@ -1,0 +1,14 @@
+{% extends 'core/base_generic.html' %}
+
+{% block body %}
+  <div class="container">
+    <div class="card mt-3">
+      <div class="card-header">
+        Resume Analysis for {{ interview.job_title }}
+      </div>
+      <div class="card-body">
+        <pre>{{ analysis | safe }}</pre>  <!-- You may want to format the JSON for better readability -->
+      </div>
+    </div>
+  </div>
+{% endblock %}

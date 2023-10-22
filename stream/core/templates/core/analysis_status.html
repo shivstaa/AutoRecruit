@@ -1,0 +1,13 @@
+<h1>Analysis in Progress for {{ interview.job_title }}</h1>
+<div id="status"></div>
+<script>
+  const checkStatus = async () => {
+    const response = await fetch("{% url 'core:analysis_check_status' pk=analysis.pk %}");
+    const data = await response.json();
+    document.getElementById('status').textContent = data.status;
+    if (data.status === 'completed') {
+      window.location.href = "{% url 'core:analysis_result' pk=analysis.pk %}";
+    }
+  };
+  setInterval(checkStatus, 3000);
+</script>
