@@ -133,7 +133,7 @@ def generate_interview_question(session: Session):
     tts_engine = ElevenLabsTTS("21m00Tcm4TlvDq8ikWAM")
 
     conversation = Session.objects.get(session_id=session.session_id).conversation_set.all()
-    interview_so_far = []
+    # interview_so_far = []
 
     messages = [
         {"role": "system", "content": f"""You are an interviewer, conducting behavioral interviews to select the most skilled and well-rounded candidates for the role of {role} at {company_name}. You generate interview questions given a job description, the resume of an interviewee to that job, and the interview so far. Read carefully the job description and associated resume, as well as the instructions that follow. However, note that you are the expert of the interview process, so the following should be taken as guidelines, not as strict rules.
@@ -157,9 +157,12 @@ def generate_interview_question(session: Session):
             - skills
             - values
             - personality
+        
+        Conversation so far:
+        {" ".join([f"{c.speaker}: {c.text}" for c in conversation])}
         """},
     ]
-    messages += interview_so_far
+    # messages += interview_so_far
 
     text_stream = chat_stream(
         messages=messages,
@@ -192,35 +195,7 @@ def stt_whisper(audio_data: bytes, model_name: str = "base.en") -> str:
     transcription_text = result["text"]
 
     return transcription_text
-
-
-# def real_time_conversation(session: Session):
-#     conversation = Session.objects.get(session_id=session.session_id).conversation_set.all()
-
-#     session = Session.objects.get(session_id=session.session_id)
-#     role = session.interview.job_title
-#     job_description = session.interview.job_description
-#     company_name = session.interview.company_name
-#     resume = session.interview.resume_text
-#     name = session.interview.user.username
-#     interview_so_far = []
-#     n = 10
-#     model = "gpt-4"
-#     tts_engine = ElevenLabsTTS("21m00Tcm4TlvDq8ikWAM")
-
-#     for i in range(n):
-#         interview_reply(role, job_description, company_name, resume, name, interview_so_far, n, model, tts_engine)
-
-#         last_user_message = conversation.filter(speaker='user').last()
-#         interview_so_far.append(last_user_message)
-
-#     generate_interview_question()    
-
-#     audio_file = get_audio() # tmp holder
-#     text = stt_whisper(audio_file)
-
     
-
 
 if __name__ == "__main__":
     import json
