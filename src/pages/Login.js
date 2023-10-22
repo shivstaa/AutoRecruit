@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
 import { AiOutlineMail, AiOutlineUser, AiOutlineLock, AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import { useAuth } from '../components/AuthContext';
+import { useNavigate } from 'react-router-dom'; 
+import { useLocation } from 'react-router-dom';
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const [notification, setNotification] = useState(null);
+
+    // user names
+    const [username, setUsername] = useState('')
+    const { setUser } = useAuth();
+    
+    const navigate = useNavigate();
+
+    const location = useLocation();
 
     const handleSubmit = () => {
         // Validate inputs
@@ -17,11 +28,18 @@ function Login() {
 
         if (!valid) {
             alert('Please fill in all required fields.');
+            setUser({username: ""})
             return;
         }
 
         // Placeholder for further processing like API calls, etc.
         console.log('Submission successful.');
+        setUser({username: username})
+
+        if(location.state?.from?.pathname === '/profile') {
+            navigate('/profile')
+        } else {navigate('/')}
+
     };
 
     const handleForgotPassword = () => {
@@ -49,7 +67,7 @@ function Login() {
                 </div>
                 
                 <div className="w-2/3 mx-auto h-px bg-white mb-6"></div>
-
+{/* 
                 { !isLogin && 
                 <div>
                 <label className="block mb-1">Email:</label>
@@ -58,13 +76,18 @@ function Login() {
                         <input required className='pl-10 pr-4 py-2 rounded-lg bg-gray-700 w-full mb-4' placeholder='Email' type='email' />
                     </div>
                 </div>
-                }
+                } */}
                     <label className="block mb-1">Username:</label>
 
                 <div className='mb-4 relative'>
                     <AiOutlineUser className='absolute top-3 left-3'/>
-                    <input required className='pl-10 pr-4 py-2 rounded-lg bg-gray-700 w-full mb-4' placeholder='Username' />
-                </div>
+                    <input 
+                required 
+                className='pl-10 pr-4 py-2 rounded-lg bg-gray-700 w-full mb-4' 
+                placeholder='Username' 
+                value={username}  // Bind the value property
+                onChange={(e) => setUsername(e.target.value)}  // Capture changes to the input value
+            />                </div>
                 
                 <label className="block mb-1">Password:</label>
                 <div className='mb-4 relative'>
@@ -78,9 +101,9 @@ function Login() {
                 { isLogin ?
                     <>
                         <button onClick={handleSubmit} className="w-full py-2 rounded-lg bg-purple-600 text-white font-bold mb-4">Login</button>
-                        <div className="text-right mb-6">
+                        {/* <div className="text-right mb-6">
                             <a href="#" onClick={handleForgotPassword} className="text-sm text-center text-gray-300 hover:underline">Lost Password? Click Here!</a>
-                        </div>
+                        </div> */}
                     </>
                     :
                     <button onClick={handleSubmit} className="w-full py-2 rounded-lg bg-purple-600 text-white font-bold mb-4">Sign Up</button>
