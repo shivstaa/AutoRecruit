@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 
 const Interview = () => {
   const videoRef = useRef(null);
@@ -7,21 +7,23 @@ const Interview = () => {
 
   const startStreaming = async () => {
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-      
+
       // Initialize WebSocket connection
-      webSocket = new WebSocket('localhost:8000/listen')
-      // webSocket = new WebSocket('ws://your_django_server_url/ws/some_path/');
+      webSocket = new WebSocket('ws://localhost:8000/listen');
       webSocket.onopen = () => {
         // Handle WebSocket open event
         console.log("WebSocket connection opened");
-        
+
         // Send data over WebSocket
         const mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = event => {
+        mediaRecorder.ondataavailable = (event) => {
           if (webSocket && webSocket.readyState === WebSocket.OPEN) {
             webSocket.send(event.data);
           }
@@ -29,14 +31,14 @@ const Interview = () => {
         mediaRecorder.start(100); // Sending data in 100ms chunks
       };
     } catch (error) {
-      console.error('Error accessing media devices.', error);
+      console.error("Error accessing media devices.", error);
     }
   };
 
   const stopStreaming = () => {
     if (mediaStream) {
       let tracks = mediaStream.getTracks();
-      tracks.forEach(track => track.stop());
+      tracks.forEach((track) => track.stop());
     }
     if (webSocket) {
       webSocket.close();
@@ -47,8 +49,18 @@ const Interview = () => {
     <div className="flex flex-col items-center justify-center h-screen">
       <video ref={videoRef} className="mb-4" autoPlay muted></video>
       <div>
-        <button onClick={startStreaming} className="mr-4 px-4 py-2 bg-blue-500 text-white rounded">Start Streaming</button>
-        <button onClick={stopStreaming} className="px-4 py-2 bg-red-500 text-white rounded">Stop Streaming</button>
+        <button
+          onClick={startStreaming}
+          className="mr-4 px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Start Streaming
+        </button>
+        <button
+          onClick={stopStreaming}
+          className="px-4 py-2 bg-red-500 text-white rounded"
+        >
+          Stop Streaming
+        </button>
       </div>
     </div>
   );
@@ -57,7 +69,6 @@ const Interview = () => {
 export default Interview;
 
 // import React, { useRef, useState, useEffect } from 'react';
-
 
 // const Interview = () => {
 //     const [recording, setRecording] = useState(false);
@@ -77,35 +88,34 @@ export default Interview;
 
 //     const startCapture = async () => {
 //         if (mediaRecorder.current) return;
-    
+
 //         try {
 //             const stream = await navigator.mediaDevices.getUserMedia({
 //                 video: true,
 //                 audio: true
 //             });
-    
+
 //             videoRef.current.srcObject = stream;
-    
+
 //             if (MediaRecorder.isTypeSupported('video/webm')) {
 //                 mediaRecorder.current = new MediaRecorder(stream, { mimeType: "video/webm" });
 //             } else {
 //                 console.error("MIME type not supported");
 //                 return;
 //             }
-    
+
 //             mediaRecorder.current.ondataavailable = (e) => {
 //                 chunks.current.push(e.data);
 //                 handleData(); // Immediately handle the data
 //             };
-    
+
 //             mediaRecorder.current.start(10000); // Collect data every 10 seconds
 //             setRecording(true);
-    
+
 //         } catch (error) {
 //             console.error("Error starting capture:", error);
 //         }
 //     };
-    
 
 //     const stopCapture = () => {
 //         if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
