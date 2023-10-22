@@ -5,13 +5,11 @@ from typing import List, Dict, AsyncGenerator
 from dotenv import load_dotenv
 
 import openai
-from elevenlabs import set_api_key, generate, stream
 
 
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
-set_api_key(os.getenv('ELEVENLABS_API_KEY'))
 
 
 def chat_stream(messages: List[Dict[str, str]], model: str) -> AsyncGenerator[str, None]:
